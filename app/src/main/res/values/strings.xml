@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Book In Short</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="nav_home">Home</string>
+    <string name="other">Other</string>
+    <string name="about_us">About Us</string>
+    <string name="genres">Genres</string>
+    <string name="scifi">Sci-Fi</string>
+    <string name="novel">Novels</string>
+    <string name="poem">Poems</string>
+    <string name="logo">Logo</string>
+    <string name="desc"><b>Welcome!</b></string>
+    <string name="drawer_open">open</string>
+    <string name="drawer_close">close</string>
+
+    <string name="mihir">मिहिर कुलकर्णी\nतेरणा इंजिनीरिंग कॉलेज चे विद्यार्थी</string>
+    <string name="dhanesh">धनेश कात्रे\nरामराव आदिक इन्स्टिटयूट\nऑफ टेकनॉलॉजि चे विद्यार्थी</string>
+
+    <string name="bis"><b>Book In Short</b></string>
+    <string name="LanguageSelect"><b>Select Preferred Language</b></string>
+    <string name="English"><b>English</b></string>
+    <string name="Marathi"><b>मराठी</b></string>
+    <string name="All"><b>All</b></string>
+    <string name="bookIcon">Book Icon</string>
+    <string name="changeLanguage">Change Language</string>
+
+    <string-array name="nav_item_activity_titles">
+        <item>Home</item>
+        <item>Sci-Fi</item>
+        <item>Novel</item>
+        <item>Poem</item>
+    </string-array>
+
+</resources>

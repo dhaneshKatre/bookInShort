@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "59447096221",
+    "firebase_url": "https://bookinshort.firebaseio.com",
+    "project_id": "bookinshort",
+    "storage_bucket": "bookinshort.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:59447096221:android:1cecb5be8b0cfef2",
+        "android_client_info": {
+          "package_name": "exception.com.bookinshort"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "59447096221-t1ui2496v94cnh5ng8ech940u5vnan3p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "exception.com.bookinshort",
+            "certificate_hash": "9fa77ba369abc0cb464c0a89f7ca1052720bb20c"
+          }
+        },
+        {
+          "client_id": "59447096221-sp13u815v2u9ollnl9eqsqe426hgvi18.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8wOjUV65KtWeqFiTenUqADs4lXzBU6E0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "59447096221-sp13u815v2u9ollnl9eqsqe426hgvi18.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

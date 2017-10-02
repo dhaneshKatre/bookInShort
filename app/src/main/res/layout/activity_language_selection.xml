@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:background="@drawable/bgbook"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.LanguageSelection">
+
+    <TextView
+        android:textColor="#000"
+        android:layout_marginTop="100dip"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Large"
+        android:layout_marginBottom="20dp"
+        android:text="@string/LanguageSelect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:textColor="#000"
+        android:text="@string/English"
+        android:layout_marginTop="10dp"
+        android:background="#fff"
+        android:id="@+id/English"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:textColor="#000"
+        android:text="@string/Marathi"
+        android:layout_marginTop="10dp"
+        android:background="#fff"
+        android:id="@+id/Marathi"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:textColor="#000"
+        android:text="@string/All"
+        android:layout_marginTop="10dp"
+        android:background="#fff"
+        android:id="@+id/All"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
