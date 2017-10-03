@@ -4,6 +4,8 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -33,6 +35,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -165,26 +169,66 @@ public class WelcomeActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
-                                    try {
-                                        final File tempFile = File.createTempFile("bookIcon","jpg");
-                                        exactRef.getFile(tempFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                BookData bookData = new BookData(BitmapFactory.decodeFile(tempFile.getAbsolutePath()),name,value.get("Describ").toString(),value.get("Author").toString());
-                                                bookModelList.add(bookData);
-                                                bookAdapter.notifyDataSetChanged();
-                                            }
-                                        }).addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                Log.e("mkdkpro",e.getMessage());
-                                            }
-                                        });
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
+                                    final File rootPath = new File(Environment.getExternalStorageDirectory(),"/bookInShort/bookIcons");
+                                    if(!rootPath.exists()){
+                                        rootPath.mkdir();
                                     }
+                                    final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
+                                    final File localFile =  new File(rootPath,name);
+
+                                         //final File tempFile = File.createTempFile("bookIcon", "jpg");
+
+                                         if (localFile.exists()) {
+                                             BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, value.get("Describ").toString(), value.get("Author").toString());
+                                             bookModelList.add(bookData);
+                                             bookAdapter.notifyDataSetChanged();
+                                         } else {
+                                             final String bookAuthorString = value.get("Author").toString();
+                                             final String bookDesString = value.get("Describ").toString();
+                                             exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                                                 @Override
+                                                 public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                                                     BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name,bookDesString , bookAuthorString );
+                                                     bookModelList.add(bookData);
+                                                     bookAdapter.notifyDataSetChanged();
+
+                                                     //Writing TO Local Directory
+                                                     /*File bookDir = new File(Environment.getExternalStorageDirectory()+"/bookInShort/bookName");
+                                                     if ( !bookDir.exists())
+                                                     {
+                                                         bookDir.mkdir();
+                                                     }
+                                                     File bookName = new File(bookDir,name);
+                                                     File bookDes = new File(bookName,"Describ");
+                                                     File bookAuthor = new File(bookName,"Describ");
+                                                     try {
+                                                         FileOutputStream fos = new FileOutputStream(bookDes);
+                                                         FileOutputStream foa = new FileOutputStream(bookAuthor);
+                                                         fos.write(bookDesString.getBytes());
+                                                         foa.write(bookAuthorString.getBytes());
+                                                         fos.close();
+                                                     } catch (IOException e) {
+                                                         e.printStackTrace();
+                                                     }*/
+
+                                                 }
+                                             }).addOnFailureListener(new OnFailureListener() {
+                                                 @Override
+                                                 public void onFailure(@NonNull Exception e) {
+                                                     Log.e("mkdkpro", e.getMessage());
+
+                                                 }
+                                             });
+                                         }
+
+
+
+
                                 }
+
+
+
+
                             });
                         }
                     }
