@@ -178,28 +178,31 @@ public class WelcomeActivity extends AppCompatActivity {
                                     }
                                     final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
                                     final File localFile =  new File(rootPath,name);
+
                                     final File bookDir = new File(Environment.getExternalStorageDirectory(),"bookInShort/bookName");
                                     if ( !bookDir.exists())
                                     {
                                         bookDir.mkdir();
                                     }
-                                    File bookName = new File(bookDir,name);
-                                    final File bookDes = new File(bookName,"Describ");
-                                    final File bookAuthor = new File(bookName,"Describ");
-
+                                    final File bookName = new File(bookDir,name);
+                                    final File bookDes = new File(bookDir,"Describ");
+                                    final File bookAuthor = new File(bookDir,"Author");
                                     String localName,localDescrib,localAuthor;
 
-                                    if (localFile.exists()) {
+                                    if (localFile.exists()&&bookAuthor.exists()&&bookName.exists()&&bookAuthor.exists()) {
                                              try {
                                                  FileInputStream fisName = new FileInputStream(bookName);
                                                  FileInputStream fisDes = new FileInputStream(bookDes);
                                                  FileInputStream fisAuth = new FileInputStream(bookAuthor);
+
                                                  InputStreamReader isrName = new InputStreamReader(fisName);
                                                  InputStreamReader isrDes = new InputStreamReader(fisDes);
                                                  InputStreamReader isrAuthor = new InputStreamReader(fisAuth);
+
                                                  BufferedReader brName = new BufferedReader(isrName);
                                                  BufferedReader brAuthor = new BufferedReader(isrAuthor);
                                                  BufferedReader brDes = new BufferedReader(isrDes);
+
                                                  StringBuffer sbDes = new StringBuffer();
                                                  StringBuffer sbName = new StringBuffer();
                                                  StringBuffer sbAuthor = new StringBuffer();
@@ -235,12 +238,17 @@ public class WelcomeActivity extends AppCompatActivity {
 
                                                      try {
                                                          FileOutputStream fos = new FileOutputStream(bookDes);
+                                                         FileOutputStream fon = new FileOutputStream(bookName);
                                                          FileOutputStream foa = new FileOutputStream(bookAuthor);
                                                          fos.write(bookDesString.getBytes());
+                                                         fon.write(name.getBytes());
                                                          foa.write(bookAuthorString.getBytes());
                                                          fos.close();
+                                                         fon.close();
+                                                         foa.close();
                                                      } catch (IOException e) {
                                                          e.printStackTrace();
+                                                         Toast.makeText(WelcomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                                      }
 
                                                  }
@@ -248,7 +256,7 @@ public class WelcomeActivity extends AppCompatActivity {
                                                  @Override
                                                  public void onFailure(@NonNull Exception e) {
                                                      Log.e("mkdkpro", e.getMessage());
-                                                     Toast.makeText(WelcomeActivity.this,e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                     //Toast.makeText(WelcomeActivity.this,e.getMessage(), Toast.LENGTH_SHORT).show();
 
                                                  }
                                              });
