@@ -172,24 +172,25 @@ public class WelcomeActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    final File rootPath = new File(Environment.getExternalStorageDirectory(),"bookInShort/bookIcon");
-                                    if(!rootPath.exists()){
-                                        rootPath.mkdir();
+                                    File extStorage = Environment.getExternalStorageDirectory();
+                                    File temp = new File(extStorage,"bookInShort");
+                                    if(!temp.exists()){
+                                        temp.mkdir();
+                                    }
+                                    final File rootPath = new File(temp,name);
+                                    if ( !rootPath.exists())
+                                    {   rootPath.mkdir();
                                     }
                                     final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
-                                    final File localFile =  new File(rootPath,name);
+                                    final File localFile =  new File(rootPath,name+".jpeg");
+                                    final File bookName = new File(rootPath,"name");
+                                    final File bookDes = new File(rootPath,"Describ");
+                                    final File bookAuthor = new File(rootPath,"Author");
 
-                                    final File bookDir = new File(Environment.getExternalStorageDirectory(),"bookInShort/bookName");
-                                    if ( !bookDir.exists())
-                                    {
-                                        bookDir.mkdir();
-                                    }
-                                    final File bookName = new File(bookDir,name);
-                                    final File bookDes = new File(bookDir,"Describ");
-                                    final File bookAuthor = new File(bookDir,"Author");
+
                                     String localName,localDescrib,localAuthor;
 
-                                    if (localFile.exists()&&bookAuthor.exists()&&bookName.exists()&&bookAuthor.exists()) {
+                                    if (localFile.exists()&&bookDes.exists()&&bookName.exists()&&bookAuthor.exists()) {
                                              try {
                                                  FileInputStream fisName = new FileInputStream(bookName);
                                                  FileInputStream fisDes = new FileInputStream(bookDes);
