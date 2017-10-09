@@ -88,7 +88,11 @@ public class WelcomeActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch(item.getItemId()){
                     case R.id.nav_home:default:
-                        loadHomeData();
+                        try {
+                            loadHomeData();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         break;
                     case R.id.genre_scifi:
                         loadData("Sci-fi");
@@ -136,17 +140,83 @@ public class WelcomeActivity extends AppCompatActivity {
             return;
         }
         if (!getSupportActionBar().getTitle().equals(getResources().getString(R.string.app_name))) {
-            loadHomeData();
+            try {
+                loadHomeData();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public void loadHomeData(){
+    public void loadHomeData() throws IOException {
         navigationView.getMenu().getItem(0).setChecked(true);
         drawer.closeDrawers();
         assert getSupportActionBar() != null;
         getSupportActionBar().setTitle(getResources().getString(R.string.app_name));
-        Toast.makeText(this,"Home",Toast.LENGTH_SHORT).show();
-    }
+        File allBookNames = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/bookInShort/","allBookNames");
+        if(allBookNames.exists()){
+            FileInputStream fisAllName = new FileInputStream(allBookNames);
+            InputStreamReader isrAllName = new InputStreamReader(fisAllName);
+            BufferedReader brAllBook = new BufferedReader(isrAllName);
+            StringBuffer sbAll = new StringBuffer();
+            String respBookNames;
+
+            while ((respBookNames=brAllBook.readLine())!=null)
+            {
+                sbAll.setLength(0);
+                sbAll.append(respBookNames);
+                File rootPath=new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/bookInShort",sbAll.toString());
+                final File localFile =  new File(rootPath,sbAll.toString()+".jpeg");
+                final File bookName = new File(rootPath,"name");
+                final File bookDes = new File(rootPath,"Describ");
+                final File bookAuthor = new File(rootPath,"Author");
+                String localName,localDescrib,localAuthor;
+
+                if (localFile.exists()&&bookDes.exists()&&bookName.exists()&&bookAuthor.exists()) {
+                    try {
+                        FileInputStream fisName = new FileInputStream(bookName);
+                        FileInputStream fisDes = new FileInputStream(bookDes);
+                        FileInputStream fisAuth = new FileInputStream(bookAuthor);
+
+                        InputStreamReader isrName = new InputStreamReader(fisName);
+                        InputStreamReader isrDes = new InputStreamReader(fisDes);
+                        InputStreamReader isrAuthor = new InputStreamReader(fisAuth);
+
+                        BufferedReader brName = new BufferedReader(isrName);
+                        BufferedReader brAuthor = new BufferedReader(isrAuthor);
+                        BufferedReader brDes = new BufferedReader(isrDes);
+
+                        StringBuffer sbDes = new StringBuffer();
+                        StringBuffer sbName = new StringBuffer();
+                        StringBuffer sbAuthor = new StringBuffer();
+                        while ((localDescrib=brDes.readLine())!=null)
+                        {
+                            sbDes.append(localDescrib+"\n");
+                        }
+                        while ((localName=brName.readLine())!=null)
+                        {
+                            sbName.append(localName+"\n");
+                        }
+                        while ((localAuthor=brAuthor.readLine())!=null)
+                        {
+                            sbAuthor.append(localAuthor+"\n");
+                        }
+                        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), sbAll.toString(), sbDes.toString(), sbAuthor.toString());
+                        bookModelList.add(bookData);
+                        bookAdapter.notifyDataSetChanged();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(this, "Failed To Load", Toast.LENGTH_SHORT).show();
+
+                }
+                }
+            }
+
+
+        }
+
     public void loadData(String genre){
         bookModelList.clear();
         drawer.closeDrawers();
@@ -172,96 +242,100 @@ public class WelcomeActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    File extStorage = Environment.getExternalStorageDirectory();
-                                    File temp = new File(extStorage,"bookInShort");
-                                    if(!temp.exists()){
+                                    final File temp = new File(Environment.getExternalStorageDirectory(),"bookInShort");
+                                    if (!temp.exists()){
                                         temp.mkdir();
                                     }
                                     final File rootPath = new File(temp,name);
                                     if ( !rootPath.exists())
                                     {   rootPath.mkdir();
                                     }
-                                    final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
                                     final File localFile =  new File(rootPath,name+".jpeg");
                                     final File bookName = new File(rootPath,"name");
                                     final File bookDes = new File(rootPath,"Describ");
                                     final File bookAuthor = new File(rootPath,"Author");
-
+                                    final File allBookNames = new File(temp,"allBookNames");
 
                                     String localName,localDescrib,localAuthor;
 
                                     if (localFile.exists()&&bookDes.exists()&&bookName.exists()&&bookAuthor.exists()) {
-                                             try {
-                                                 FileInputStream fisName = new FileInputStream(bookName);
-                                                 FileInputStream fisDes = new FileInputStream(bookDes);
-                                                 FileInputStream fisAuth = new FileInputStream(bookAuthor);
+                                        try {
+                                            FileInputStream fisName = new FileInputStream(bookName);
+                                            FileInputStream fisDes = new FileInputStream(bookDes);
+                                            FileInputStream fisAuth = new FileInputStream(bookAuthor);
 
-                                                 InputStreamReader isrName = new InputStreamReader(fisName);
-                                                 InputStreamReader isrDes = new InputStreamReader(fisDes);
-                                                 InputStreamReader isrAuthor = new InputStreamReader(fisAuth);
+                                            InputStreamReader isrName = new InputStreamReader(fisName);
+                                            InputStreamReader isrDes = new InputStreamReader(fisDes);
+                                            InputStreamReader isrAuthor = new InputStreamReader(fisAuth);
 
-                                                 BufferedReader brName = new BufferedReader(isrName);
-                                                 BufferedReader brAuthor = new BufferedReader(isrAuthor);
-                                                 BufferedReader brDes = new BufferedReader(isrDes);
+                                            BufferedReader brName = new BufferedReader(isrName);
+                                            BufferedReader brAuthor = new BufferedReader(isrAuthor);
+                                            BufferedReader brDes = new BufferedReader(isrDes);
 
-                                                 StringBuffer sbDes = new StringBuffer();
-                                                 StringBuffer sbName = new StringBuffer();
-                                                 StringBuffer sbAuthor = new StringBuffer();
-                                                 while ((localDescrib=brDes.readLine())!=null)
-                                                 {
-                                                     sbDes.append(localDescrib+"\n");
-                                                 }
-                                                 while ((localName=brName.readLine())!=null)
-                                                 {
-                                                     sbName.append(localName+"\n");
-                                                 }
-                                                 while ((localAuthor=brAuthor.readLine())!=null)
-                                                 {
-                                                     sbAuthor.append(localAuthor+"\n");
-                                                 }
-                                                 BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, sbDes.toString(), sbAuthor.toString());
-                                                 bookModelList.add(bookData);
-                                                 bookAdapter.notifyDataSetChanged();
-                                             } catch (IOException e) {
-                                                 e.printStackTrace();
-                                             }
-                                         } else {
-                                             final String bookDesString = value.get("Describ").toString();
-                                             final String bookAuthorString = value.get("Author").toString();
-                                             exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                                 @Override
-                                                 public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                     BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString );
-                                                     bookModelList.add(bookData);
-                                                     bookAdapter.notifyDataSetChanged();
+                                            StringBuffer sbDes = new StringBuffer();
+                                            StringBuffer sbName = new StringBuffer();
+                                            StringBuffer sbAuthor = new StringBuffer();
+                                            while ((localDescrib=brDes.readLine())!=null)
+                                            {
+                                                sbDes.append(localDescrib+"\n");
+                                            }
+                                            while ((localName=brName.readLine())!=null)
+                                            {
+                                                sbName.append(localName+"\n");
+                                            }
+                                            while ((localAuthor=brAuthor.readLine())!=null)
+                                            {
+                                                sbAuthor.append(localAuthor+"\n");
+                                            }
+                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, sbDes.toString(), sbAuthor.toString());
+                                            bookModelList.add(bookData);
+                                            bookAdapter.notifyDataSetChanged();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    } else {
 
-                                                     //Writing TO Local Directory
+                                        final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
+                                        final String bookDesString = value.get("Describ").toString();
+                                        final String bookAuthorString = value.get("Author").toString();
+                                        exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString );
+                                                bookModelList.add(bookData);
+                                                bookAdapter.notifyDataSetChanged();
 
-                                                     try {
-                                                         FileOutputStream fos = new FileOutputStream(bookDes);
-                                                         FileOutputStream fon = new FileOutputStream(bookName);
-                                                         FileOutputStream foa = new FileOutputStream(bookAuthor);
-                                                         fos.write(bookDesString.getBytes());
-                                                         fon.write(name.getBytes());
-                                                         foa.write(bookAuthorString.getBytes());
-                                                         fos.close();
-                                                         fon.close();
-                                                         foa.close();
-                                                     } catch (IOException e) {
-                                                         e.printStackTrace();
-                                                         Toast.makeText(WelcomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                     }
+                                                //Writing TO Local Directory
 
-                                                 }
-                                             }).addOnFailureListener(new OnFailureListener() {
-                                                 @Override
-                                                 public void onFailure(@NonNull Exception e) {
-                                                     Log.e("mkdkpro", e.getMessage());
-                                                     //Toast.makeText(WelcomeActivity.this,e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                try {
+                                                    String allFileN = name+System.getProperty("line.separator");
+                                                    FileOutputStream fos = new FileOutputStream(bookDes);
+                                                    FileOutputStream fon = new FileOutputStream(bookName);
+                                                    FileOutputStream foa = new FileOutputStream(bookAuthor);
+                                                    FileOutputStream write2allbookName= new FileOutputStream(allBookNames,true);
+                                                    write2allbookName.write(allFileN.getBytes());
+                                                    fos.write(bookDesString.getBytes());
+                                                    fon.write(name.getBytes());
+                                                    foa.write(bookAuthorString.getBytes());
+                                                    write2allbookName.close();
+                                                    fos.close();
+                                                    fon.close();
+                                                    foa.close();
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                    Toast.makeText(WelcomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                }
 
-                                                 }
-                                             });
-                                         }
+                                            }
+                                        }).addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.e("mkdkpro", e.getMessage());
+                                                //Toast.makeText(WelcomeActivity.this,e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                                            }
+                                        });
+                                    }
 
 
 
@@ -301,6 +375,8 @@ public class WelcomeActivity extends AppCompatActivity {
             default: return super.onOptionsItemSelected(item);
         }
     }
+
+
 
 
 
