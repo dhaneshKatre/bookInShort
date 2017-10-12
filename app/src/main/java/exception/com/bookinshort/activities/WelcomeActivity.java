@@ -4,7 +4,6 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -37,7 +36,6 @@ import com.google.firebase.storage.StorageReference;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import exception.com.bookinshort.R;
+
 public class WelcomeActivity extends AppCompatActivity {
 
     private DrawerLayout drawer;
@@ -55,16 +54,19 @@ public class WelcomeActivity extends AppCompatActivity {
     private RecyclerView.Adapter bookAdapter;
     private List<BookData> bookModelList;
     private NavigationView navigationView;
-
     private DatabaseReference bookReference;
     private StorageReference bookIconReference;
+    private RecyclerView bookRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
-        language = getIntent().getExtras().getString("Language","English");
+        language = getIntent().getExtras().getString("Language");
+
         bookReference = FirebaseDatabase.getInstance().getReference("Books");
         bookIconReference = FirebaseStorage.getInstance().getReference("Books");
 
@@ -75,12 +77,12 @@ public class WelcomeActivity extends AppCompatActivity {
         drawer = (DrawerLayout)findViewById(R.id.draw);
         drawerToggle = new ActionBarDrawerToggle(this,drawer,toolbar,R.string.drawer_open,R.string.drawer_close);
 
-        final RecyclerView bookRecyclerView = (RecyclerView)findViewById(R.id.mainRecyclerView);
+        bookRecyclerView = (RecyclerView)findViewById(R.id.mainRecyclerView);
         bookRecyclerView.setHasFixedSize(true);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         bookModelList = new ArrayList<>();
-        bookAdapter = new BookAdapter(bookModelList,this);
-        bookRecyclerView.setAdapter(bookAdapter);
+
+
 
         navigationView = (NavigationView)findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -208,7 +210,7 @@ public class WelcomeActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 } else {
-                    Toast.makeText(this, "Failed To Load", Toast.LENGTH_SHORT).show();
+                    // TODO: 10-10-2017 Remove line from respBookNames
 
                 }
                 }
@@ -218,6 +220,8 @@ public class WelcomeActivity extends AppCompatActivity {
         }
 
     public void loadData(String genre){
+        bookAdapter = new BookAdapter(bookModelList,this,language,genre);
+        bookRecyclerView.setAdapter(bookAdapter);
         bookModelList.clear();
         drawer.closeDrawers();
         assert getSupportActionBar() != null;
@@ -375,91 +379,6 @@ public class WelcomeActivity extends AppCompatActivity {
             default: return super.onOptionsItemSelected(item);
         }
     }
-
-
-
-
-
-    public void loadScifiData() {
-        bookModelList.clear();
-        drawer.closeDrawers();
-        getSupportActionBar().setTitle("Sci-Fi");
-        switch (language) {
-            case "English":
-            default:
-                final DatabaseReference EngSciFiRef = bookReference.child("English").child("Sci-fi");
-                final StorageReference EngSciFiImageRef = bookIconReference.child("English").child("Sci-fi");
-                progressDialog.setMessage("Loading Content...");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        EngSciFiRef.addValueEventListener(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                if (dataSnapshot.getChildrenCount() == 0) {
-                                    Toast.makeText(getApplicationContext(), "Empty List", Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-                                for (DataSnapshot data : dataSnapshot.getChildren()) {
-                                    //final Bitmap bookIcon = BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher);
-                                    final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            StorageReference exactRef = EngSciFiImageRef.child(value.get("Name").toString()+".jpg");
-                                            try {
-                                                final File tempFile = File.createTempFile("bookIcon","jpg");
-                                                exactRef.getFile(tempFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                        BookData bookData = new BookData(BitmapFactory.decodeFile(tempFile.getAbsolutePath()),value.get("Name").toString(),value.get("Describ").toString(),value.get("Author").toString());
-                                                        bookModelList.add(bookData);
-                                                        bookAdapter.notifyDataSetChanged();
-                                                    }
-                                                }).addOnFailureListener(new OnFailureListener() {
-                                                    @Override
-                                                    public void onFailure(@NonNull Exception e) {
-                                                        Log.e("mkdkpro",e.getMessage());
-                                                    }
-                                                });
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                                progressDialog.dismiss();
-                                Log.e("mkdkpro",databaseError.getMessage());
-                            }
-                        });
-                    }
-                });
-                progressDialog.dismiss();
-                break;
-            case "Marathi":
-                break;
-            case "All":
-                break;
-        }
-    }
-    public void loadNovelData(){
-        drawer.closeDrawers();
-        bookModelList.clear();
-        bookAdapter.notifyDataSetChanged();
-        assert getSupportActionBar() != null;
-        getSupportActionBar().setTitle("Novels");
-    }
-    public void loadPoemData(){
-        drawer.closeDrawers();
-        bookModelList.clear();
-        bookAdapter.notifyDataSetChanged();
-        assert getSupportActionBar() != null;
-        getSupportActionBar().setTitle("Poems");
-    }
-
 }
 
 

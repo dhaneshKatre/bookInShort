@@ -2,6 +2,7 @@ package exception.com.bookinshort.activities;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -22,17 +23,20 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
 
     private List<BookData> bookModelList;
     private Context context;
+    private String lang,genre;
 
-    public BookAdapter(List<BookData> bookModelList, Context context) {
+    public BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre) {
         this.bookModelList = bookModelList;
         this.context = context;
+        this.lang=lang ;
+        this.genre=genre;
+
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.book_list_item,parent,false);
-
         return new ViewHolder(view);
     }
 
@@ -59,7 +63,12 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(context, "YO BRO", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, bookData.getName(), Toast.LENGTH_SHORT).show();
+                Intent intent= new Intent(context,TabBookOpenActivity.class);
+                intent.putExtra("lang",lang);
+                intent.putExtra("genre",genre);
+                intent.putExtra("name",bookData.getName());
+                context.startActivity(intent);
             }
         });
     }
