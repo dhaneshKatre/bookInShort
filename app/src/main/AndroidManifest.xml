@@ -22,7 +22,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".activities.LanguageSelection" />
-        <activity android:name=".activities.TabBookOpenActivity"></activity>
+        <activity android:name=".activities.TabBookOpenActivity" />
+        <activity android:name=".activities.LoginActivity" />
     </application>
 
 </manifest>

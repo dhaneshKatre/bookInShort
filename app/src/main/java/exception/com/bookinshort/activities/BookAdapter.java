@@ -43,27 +43,29 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         final BookData bookData = bookModelList.get(position);
-        holder.bookIcon.setImageBitmap(bookData.getIcon());
-        holder.bookName.setText(bookData.getName());
-        holder.bookAuthor.setText(bookData.getAuthor());
-        holder.bookDescription.setText(bookData.getDescription());
-        holder.rateBook.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder mBuilder = new AlertDialog.Builder(v.getContext());
-                View mView = View.inflate(v.getContext(),R.layout.alert_dial_rate_book,null);
-                TextView tvName = (TextView) mView.findViewById(R.id.rateBookName);
-                tvName.setText("Please rate '"+bookData.getName()+"' Thank You!");
-                mBuilder.setView(mView);
-                AlertDialog dial = mBuilder.create();
-                dial.show();
+        if(!(bookData.getName() ==null)) {
+            holder.bookIcon.setImageBitmap(bookData.getIcon());
+            holder.bookName.setText(bookData.getName());
+            holder.bookAuthor.setText(bookData.getAuthor());
+            holder.bookDescription.setText(bookData.getDescription());
+            holder.rateBook.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AlertDialog.Builder mBuilder = new AlertDialog.Builder(v.getContext());
+                    View mView = View.inflate(v.getContext(), R.layout.alert_dial_rate_book, null);
+                    TextView tvName = (TextView) mView.findViewById(R.id.rateBookName);
+                    tvName.setText("Please rate '" + bookData.getName() + "' Thank You!");
+                    mBuilder.setView(mView);
+                    AlertDialog dial = mBuilder.create();
+                    dial.show();
+                }
 
-            }
-        });
+
+            });
+        }
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(context, bookData.getName(), Toast.LENGTH_SHORT).show();
                 Intent intent= new Intent(context,TabBookOpenActivity.class);
                 intent.putExtra("lang",lang);
                 intent.putExtra("genre",genre);
