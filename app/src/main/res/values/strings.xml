@@ -23,6 +23,12 @@
     <string name="All"><b>All</b></string>
     <string name="bookIcon">Book Icon</string>
     <string name="changeLanguage">Change Language</string>
+    <string name="author">Author</string>
+    <string name="name">Name</string>
+    <string name="please_rate_the_book_thank_you">Please rate the book, Thank You!</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="cleardata">clearData</string>
 
     <string-array name="nav_item_activity_titles">
         <item>Home</item>

@@ -2,9 +2,9 @@ package exception.com.bookinshort.activities;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import exception.com.bookinshort.R;
+
 public class WelcomeActivity extends AppCompatActivity {
 
     private DrawerLayout drawer;
@@ -55,16 +56,19 @@ public class WelcomeActivity extends AppCompatActivity {
     private RecyclerView.Adapter bookAdapter;
     private List<BookData> bookModelList;
     private NavigationView navigationView;
-
     private DatabaseReference bookReference;
     private StorageReference bookIconReference;
+    private RecyclerView bookRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
-        language = getIntent().getExtras().getString("Language","English");
+        language = getIntent().getExtras().getString("Language");
+
         bookReference = FirebaseDatabase.getInstance().getReference("Books");
         bookIconReference = FirebaseStorage.getInstance().getReference("Books");
 
@@ -75,12 +79,10 @@ public class WelcomeActivity extends AppCompatActivity {
         drawer = (DrawerLayout)findViewById(R.id.draw);
         drawerToggle = new ActionBarDrawerToggle(this,drawer,toolbar,R.string.drawer_open,R.string.drawer_close);
 
-        final RecyclerView bookRecyclerView = (RecyclerView)findViewById(R.id.mainRecyclerView);
+        bookRecyclerView = (RecyclerView)findViewById(R.id.mainRecyclerView);
         bookRecyclerView.setHasFixedSize(true);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         bookModelList = new ArrayList<>();
-        bookAdapter = new BookAdapter(bookModelList,this);
-        bookRecyclerView.setAdapter(bookAdapter);
 
         navigationView = (NavigationView)findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -102,6 +104,11 @@ public class WelcomeActivity extends AppCompatActivity {
                     case R.id.nav_about_us:
                         drawer.closeDrawers();
                         startActivity(new Intent(WelcomeActivity.this,AboutUs.class));
+                        break;
+                    case R.id.loginMenu:
+                        drawer.closeDrawers();
+                        startActivity(new Intent(WelcomeActivity.this,LoginActivity.class));
+                        break;
                 }
                 if(item.isChecked()) item.setChecked(false);
                 else item.setChecked(true);
@@ -135,19 +142,45 @@ public class WelcomeActivity extends AppCompatActivity {
             super.onBackPressed();
             return;
         }
-        if (!getSupportActionBar().getTitle().equals(getResources().getString(R.string.app_name))) {
-            loadHomeData();
-        }
     }
 
-    public void loadHomeData(){
-        navigationView.getMenu().getItem(0).setChecked(true);
+    public void loadHomeData() {
         drawer.closeDrawers();
-        assert getSupportActionBar() != null;
-        getSupportActionBar().setTitle(getResources().getString(R.string.app_name));
-        Toast.makeText(this,"Home",Toast.LENGTH_SHORT).show();
+        getSupportActionBar().setTitle("Home");
+        bookAdapter = new BookAdapter(bookModelList,this,language,null);
+        bookRecyclerView.setAdapter(bookAdapter);
+        bookModelList.clear();
+        SharedPreferences bookName = getSharedPreferences("bookNames",MODE_PRIVATE);
+        int count = bookName.getInt("current",0);
+        for (int i = count;i>=1;i--){
+            if(bookName.getString(String.valueOf(i),"").equalsIgnoreCase("null")){
+                continue;
+            }
+            String nemo = bookName.getString(String.valueOf(i),"");
+            loadFromDevice(nemo);
+
+         }
     }
-    public void loadData(String genre){
+    private void loadFromDevice(String nemo) {
+        File rootPath=new File(Environment.getExternalStorageDirectory().getAbsolutePath(),"bookInShort");
+        if (!rootPath.exists()){
+            Toast.makeText(this, "OPEN A BOOK FIRST", Toast.LENGTH_SHORT).show();
+        }
+        final File localFile =  new File(rootPath,nemo+".jpeg");
+        String auth,describ;
+        SharedPreferences namePref = getSharedPreferences(nemo,MODE_PRIVATE);
+        auth=namePref.getString("author","");
+        describ=namePref.getString("describ","");
+        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth);
+        bookModelList.add(bookData);
+        bookAdapter.notifyDataSetChanged();
+        onBackPressed();
+    }
+
+
+    public void loadData(final String genre){
+        bookAdapter = new BookAdapter(bookModelList,this,language,genre);
+        bookRecyclerView.setAdapter(bookAdapter);
         bookModelList.clear();
         drawer.closeDrawers();
         assert getSupportActionBar() != null;
@@ -166,111 +199,62 @@ public class WelcomeActivity extends AppCompatActivity {
                             Toast.makeText(getApplicationContext(), "Empty List", Toast.LENGTH_LONG).show();
                             return;
                         }
-                        for (DataSnapshot data : dataSnapshot.getChildren()) {
+                        for (final DataSnapshot data : dataSnapshot.getChildren()) {
                             final String name = data.getKey();
-                            final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    File extStorage = Environment.getExternalStorageDirectory();
-                                    File temp = new File(extStorage,"bookInShort");
+                                    final File temp = new File(Environment.getExternalStorageDirectory(),"bookInShort");
                                     if(!temp.exists()){
                                         temp.mkdir();
                                     }
-                                    final File rootPath = new File(temp,name);
-                                    if ( !rootPath.exists())
-                                    {   rootPath.mkdir();
+                                    String auth,describ;
+                                        final File localFile =  new File(temp,name+".jpeg");
+                                        if(localFile.exists()){
+                                            SharedPreferences namePref = getSharedPreferences(name,MODE_PRIVATE);
+                                            auth=namePref.getString("author","");
+                                            describ=namePref.getString("describ","");
+                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth);
+                                            bookModelList.add(bookData);
+                                            bookAdapter.notifyDataSetChanged();
+                                        }
+                                        else {
+                                        final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
+                                        final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
+                                        final String bookDesString = value.get("Describ").toString();
+                                        final String bookAuthorString = value.get("Author").toString();
+                                        exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString );
+                                                bookModelList.add(bookData);
+                                                bookAdapter.notifyDataSetChanged();
+
+                                                //Writing To Shared Preference
+
+                                                SharedPreferences bookGenre = getSharedPreferences(genre,MODE_PRIVATE);
+                                                SharedPreferences bookNameAddVal = getSharedPreferences(name,MODE_PRIVATE);
+                                                SharedPreferences.Editor nameAddEdit = bookNameAddVal.edit();
+                                                SharedPreferences.Editor genreEdit = bookGenre.edit();
+
+                                                int c = bookGenre.getInt("count", 0);
+                                                c++;
+                                                genreEdit.putInt("count", c);
+                                                genreEdit.putString(String.valueOf(c), name);
+                                                nameAddEdit.putString("author",bookAuthorString);
+                                                nameAddEdit.putString("bookName",name);
+                                                nameAddEdit.putString("describ",bookDesString);
+                                                nameAddEdit.apply();
+                                                genreEdit.apply();
+                                            }
+                                        }).addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.e("mkdkpro", e.getMessage());
+                                            }
+                                        });
                                     }
-                                    final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
-                                    final File localFile =  new File(rootPath,name+".jpeg");
-                                    final File bookName = new File(rootPath,"name");
-                                    final File bookDes = new File(rootPath,"Describ");
-                                    final File bookAuthor = new File(rootPath,"Author");
-
-
-                                    String localName,localDescrib,localAuthor;
-
-                                    if (localFile.exists()&&bookDes.exists()&&bookName.exists()&&bookAuthor.exists()) {
-                                             try {
-                                                 FileInputStream fisName = new FileInputStream(bookName);
-                                                 FileInputStream fisDes = new FileInputStream(bookDes);
-                                                 FileInputStream fisAuth = new FileInputStream(bookAuthor);
-
-                                                 InputStreamReader isrName = new InputStreamReader(fisName);
-                                                 InputStreamReader isrDes = new InputStreamReader(fisDes);
-                                                 InputStreamReader isrAuthor = new InputStreamReader(fisAuth);
-
-                                                 BufferedReader brName = new BufferedReader(isrName);
-                                                 BufferedReader brAuthor = new BufferedReader(isrAuthor);
-                                                 BufferedReader brDes = new BufferedReader(isrDes);
-
-                                                 StringBuffer sbDes = new StringBuffer();
-                                                 StringBuffer sbName = new StringBuffer();
-                                                 StringBuffer sbAuthor = new StringBuffer();
-                                                 while ((localDescrib=brDes.readLine())!=null)
-                                                 {
-                                                     sbDes.append(localDescrib+"\n");
-                                                 }
-                                                 while ((localName=brName.readLine())!=null)
-                                                 {
-                                                     sbName.append(localName+"\n");
-                                                 }
-                                                 while ((localAuthor=brAuthor.readLine())!=null)
-                                                 {
-                                                     sbAuthor.append(localAuthor+"\n");
-                                                 }
-                                                 BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, sbDes.toString(), sbAuthor.toString());
-                                                 bookModelList.add(bookData);
-                                                 bookAdapter.notifyDataSetChanged();
-                                             } catch (IOException e) {
-                                                 e.printStackTrace();
-                                             }
-                                         } else {
-                                             final String bookDesString = value.get("Describ").toString();
-                                             final String bookAuthorString = value.get("Author").toString();
-                                             exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                                 @Override
-                                                 public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                     BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString );
-                                                     bookModelList.add(bookData);
-                                                     bookAdapter.notifyDataSetChanged();
-
-                                                     //Writing TO Local Directory
-
-                                                     try {
-                                                         FileOutputStream fos = new FileOutputStream(bookDes);
-                                                         FileOutputStream fon = new FileOutputStream(bookName);
-                                                         FileOutputStream foa = new FileOutputStream(bookAuthor);
-                                                         fos.write(bookDesString.getBytes());
-                                                         fon.write(name.getBytes());
-                                                         foa.write(bookAuthorString.getBytes());
-                                                         fos.close();
-                                                         fon.close();
-                                                         foa.close();
-                                                     } catch (IOException e) {
-                                                         e.printStackTrace();
-                                                         Toast.makeText(WelcomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                     }
-
-                                                 }
-                                             }).addOnFailureListener(new OnFailureListener() {
-                                                 @Override
-                                                 public void onFailure(@NonNull Exception e) {
-                                                     Log.e("mkdkpro", e.getMessage());
-                                                     //Toast.makeText(WelcomeActivity.this,e.getMessage(), Toast.LENGTH_SHORT).show();
-
-                                                 }
-                                             });
-                                         }
-
-
-
-
                                 }
-
-
-
-
                             });
                         }
                     }
@@ -283,6 +267,7 @@ public class WelcomeActivity extends AppCompatActivity {
             }
         });
         progressDialog.dismiss();
+        onBackPressed();
     }
 
     @Override
@@ -297,91 +282,16 @@ public class WelcomeActivity extends AppCompatActivity {
             case R.id.languageChange:
                 startActivity(new Intent(WelcomeActivity.this,LanguageSelection.class));
                 finish();
+                 return  true;
+            case R.id.clearData:
+                SharedPreferences ms = getSharedPreferences("bookNames",MODE_PRIVATE);
+                SharedPreferences.Editor edit= ms.edit();
+                edit.clear();
+                edit.apply();
                 return true;
+
             default: return super.onOptionsItemSelected(item);
         }
-    }
-
-
-
-    public void loadScifiData() {
-        bookModelList.clear();
-        drawer.closeDrawers();
-        getSupportActionBar().setTitle("Sci-Fi");
-        switch (language) {
-            case "English":
-            default:
-                final DatabaseReference EngSciFiRef = bookReference.child("English").child("Sci-fi");
-                final StorageReference EngSciFiImageRef = bookIconReference.child("English").child("Sci-fi");
-                progressDialog.setMessage("Loading Content...");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        EngSciFiRef.addValueEventListener(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                if (dataSnapshot.getChildrenCount() == 0) {
-                                    Toast.makeText(getApplicationContext(), "Empty List", Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-                                for (DataSnapshot data : dataSnapshot.getChildren()) {
-                                    //final Bitmap bookIcon = BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher);
-                                    final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            StorageReference exactRef = EngSciFiImageRef.child(value.get("Name").toString()+".jpg");
-                                            try {
-                                                final File tempFile = File.createTempFile("bookIcon","jpg");
-                                                exactRef.getFile(tempFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                        BookData bookData = new BookData(BitmapFactory.decodeFile(tempFile.getAbsolutePath()),value.get("Name").toString(),value.get("Describ").toString(),value.get("Author").toString());
-                                                        bookModelList.add(bookData);
-                                                        bookAdapter.notifyDataSetChanged();
-                                                    }
-                                                }).addOnFailureListener(new OnFailureListener() {
-                                                    @Override
-                                                    public void onFailure(@NonNull Exception e) {
-                                                        Log.e("mkdkpro",e.getMessage());
-                                                    }
-                                                });
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                                progressDialog.dismiss();
-                                Log.e("mkdkpro",databaseError.getMessage());
-                            }
-                        });
-                    }
-                });
-                progressDialog.dismiss();
-                break;
-            case "Marathi":
-                break;
-            case "All":
-                break;
-        }
-    }
-    public void loadNovelData(){
-        drawer.closeDrawers();
-        bookModelList.clear();
-        bookAdapter.notifyDataSetChanged();
-        assert getSupportActionBar() != null;
-        getSupportActionBar().setTitle("Novels");
-    }
-    public void loadPoemData(){
-        drawer.closeDrawers();
-        bookModelList.clear();
-        bookAdapter.notifyDataSetChanged();
-        assert getSupportActionBar() != null;
-        getSupportActionBar().setTitle("Poems");
     }
 
 }

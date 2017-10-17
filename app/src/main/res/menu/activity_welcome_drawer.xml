@@ -20,6 +20,10 @@
                     android:icon="@drawable/paper"
                     android:id="@+id/genre_poem"
                     android:title="@string/poem"/>
+                <item
+                    android:icon="@drawable/tab_selector"
+                    android:id="@+id/loginMenu"
+                    android:title="Login"/>
             </group>
 
     <item android:title="@string/other">
