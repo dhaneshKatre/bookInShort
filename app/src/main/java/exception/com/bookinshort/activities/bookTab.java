@@ -1,9 +1,5 @@
 package exception.com.bookinshort.activities;
 
-/**
- * Created by MihirPC on 12-10-2017.
- */
-
 public class bookTab {
     private String tab;
 

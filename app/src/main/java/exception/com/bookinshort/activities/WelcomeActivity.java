@@ -34,13 +34,7 @@ import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +62,6 @@ public class WelcomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_welcome);
 
         language = getIntent().getExtras().getString("Language");
-
         bookReference = FirebaseDatabase.getInstance().getReference("Books");
         bookIconReference = FirebaseStorage.getInstance().getReference("Books");
 
@@ -142,6 +135,7 @@ public class WelcomeActivity extends AppCompatActivity {
             super.onBackPressed();
             return;
         }
+        super.onBackPressed();
     }
 
     public void loadHomeData() {

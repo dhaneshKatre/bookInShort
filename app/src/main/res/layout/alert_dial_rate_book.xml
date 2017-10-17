@@ -1,48 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@android:drawable/dialog_holo_light_frame"
     android:orientation="vertical"
+    android:padding="5dp"
+    android:layout_centerHorizontal="true"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
     <TextView
+        android:gravity="center_horizontal"
+        android:textSize="21sp"
+        android:layout_gravity="center_horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/please_rate_the_book_thank_you"
         android:id="@+id/rateBookName"/>
 
-        <RadioGroup
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingLeft="10dp">
-        <RadioButton
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1"/>
-        <RadioButton
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="2"/>
-        <RadioButton
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="3"/>
-        <RadioButton
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="4"/>
-        <RadioButton
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="5"/>
+    <RatingBar
+        android:layout_marginTop="3dp"
+        android:id="@+id/rateBar"
+        android:layout_gravity="center_horizontal"
+        android:stepSize="0.5"
+        android:numStars="5"
+        android:rating="4.5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
-        </RadioGroup>
+    <Button
+        android:id="@+id/rateButton"
+        android:text="@string/okay"
+        android:layout_marginTop="2dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 
 </LinearLayout>

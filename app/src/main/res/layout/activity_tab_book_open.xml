@@ -2,23 +2,33 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:local="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="exception.com.bookinshort.activities.TabBookOpenActivity">
 
-    <android.support.v7.widget.ActionBarContainer
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"></android.support.v7.widget.ActionBarContainer>
+        android:layout_height="wrap_content">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbarInOpenBook"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="#27ae60"
+            android:theme="@style/toolBarStyle"
+            local:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
+    </android.support.design.widget.AppBarLayout>
 
     <android.support.v4.view.ViewPager
         android:layout_width="match_parent"
         android:id="@+id/tabOpenViewPager"
         android:layout_height="0dp"
-        android:layout_weight="0.9"
-        >
+        android:layout_weight="0.9">
     </android.support.v4.view.ViewPager>
+
     <android.support.design.widget.TabLayout
         android:id="@+id/tab_layout"
         android:layout_width="match_parent"
@@ -27,7 +37,5 @@
         app:tabGravity="center"
         app:tabIndicatorHeight="0dp"
         android:layout_weight="0.1"/>
-
-
 
 </LinearLayout>

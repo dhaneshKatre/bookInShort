@@ -5,6 +5,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,6 +28,7 @@ public class TabBookOpenActivity extends AppCompatActivity{
     private DatabaseReference databaseReference;
     private String lang,genre,name;
     private tabPagerAdapter tpa;
+    private Toolbar toolbar;
     private List<bookTab> bookList;
     private TabLayout tabLayout;
     @Override
@@ -34,9 +36,14 @@ public class TabBookOpenActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_book_open);
         viewPager = (ViewPager) findViewById(R.id.tabOpenViewPager);
+        toolbar = (Toolbar)findViewById(R.id.toolbarInOpenBook);
+        setSupportActionBar(toolbar);
         lang = getIntent().getExtras().getString("lang");
         genre = getIntent().getExtras().getString("genre");
         name = getIntent().getExtras().getString("name");
+        toolbar.setTitle(name);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
         bookList = new ArrayList<>();
         tpa = new tabPagerAdapter(this, bookList);
         viewPager.setAdapter(tpa);
@@ -44,7 +51,6 @@ public class TabBookOpenActivity extends AppCompatActivity{
         tabLayout.setupWithViewPager(viewPager, true);
         if (genre == null) {
             SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
-
             int count = getBookName.getInt("tabCount", 0);
             for (int i = 1; i <= count; i++) {
                 String abc = getBookName.getString(valueOf(i), "");
@@ -52,12 +58,9 @@ public class TabBookOpenActivity extends AppCompatActivity{
                 bookTab bt = new bookTab(tab);
                 bookList.add(bt);
                 tpa.notifyDataSetChanged();
-
             }
             int lastPage = getBookName.getInt("lastPage",0);
             viewPager.setCurrentItem(lastPage);
-
-
         } else {
             databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");
             databaseReference.addValueEventListener(new ValueEventListener() {
@@ -87,14 +90,11 @@ public class TabBookOpenActivity extends AppCompatActivity{
                     Toast.makeText(TabBookOpenActivity.this, databaseError.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-
             initSharedPref();
-
         }
     }
 
     private void initSharedPref() {
-
         SharedPreferences storeBookName = getSharedPreferences("bookNames", MODE_PRIVATE);
         SharedPreferences.Editor addBookName = storeBookName.edit();
         int c = storeBookName.getInt("current", 0);
@@ -109,6 +109,17 @@ public class TabBookOpenActivity extends AppCompatActivity{
             addBookName.putInt("current", c);
             addBookName.putString(valueOf(c), name);
             addBookName.apply();
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 
     @Override
