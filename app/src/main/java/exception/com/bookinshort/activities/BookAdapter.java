@@ -29,7 +29,6 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
         this.context = context;
         this.lang=lang ;
         this.genre=genre;
-
     }
 
     @Override
@@ -47,6 +46,7 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
             holder.bookName.setText(bookData.getName());
             holder.bookAuthor.setText(bookData.getAuthor());
             holder.bookDescription.setText(bookData.getDescription());
+            holder.noOfPages.setText(bookData.getNoOfPages());
             holder.rateBook.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -72,6 +72,8 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
                         public void onClick(View v) {
                             float rating = ratingBar.getRating();
                             Toast.makeText(context,"Your final rating: " + rating,Toast.LENGTH_SHORT).show();
+                            bookData.setRateCount(""+rating);
+                            holder.rateCount.setText(bookData.getRateCount());
                             dial.dismiss();
                         }
                     });
@@ -100,12 +102,10 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
     public class ViewHolder extends RecyclerView.ViewHolder{
         public ImageView bookIcon;
         public ImageButton rateBook;
-        public TextView bookName, bookAuthor, bookDescription, rateBookName;
+        public TextView bookName, bookAuthor, bookDescription, rateBookName, noOfPages, rateCount;
         public RelativeLayout relativeLayout;
-
         public ViewHolder(View itemView) {
             super(itemView);
-
             relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layoutBookRecycle) ;
             rateBook = (ImageButton)itemView.findViewById(R.id.rateBook);
             bookIcon = (ImageView)itemView.findViewById(R.id.bookIcon);
@@ -113,6 +113,8 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
             bookAuthor = (TextView)itemView.findViewById(R.id.bookAuthor);
             bookDescription = (TextView)itemView.findViewById(R.id.bookDescription);
             rateBookName = (TextView)itemView.findViewById(R.id.rateBookName);
+            noOfPages = (TextView)itemView.findViewById(R.id.noOfPages);
+            rateCount = (TextView)itemView.findViewById(R.id.rateCount);
         }
     }
 }

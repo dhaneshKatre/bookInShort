@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:local="http://schemas.android.com/apk/res-auto"
@@ -35,11 +34,10 @@
         android:layout_height="0dp"
         app:tabBackground="@drawable/tab_selector"
         app:tabMode="scrollable"
+        android:layout_gravity="center_horizontal"
         app:tabGravity="center"
         app:tabIndicatorHeight="0dp"
         app:tabMaxWidth="50dp"
-        android:layout_weight="0.1"
-        >
-        </android.support.design.widget.TabLayout>
+        android:layout_weight="0.1"/>
 
 </LinearLayout>

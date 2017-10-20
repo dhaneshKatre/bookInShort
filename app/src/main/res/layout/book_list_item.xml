@@ -28,6 +28,14 @@
             android:layout_height="100dp" />
 
         <TextView
+            android:textSize="19sp"
+            android:id="@+id/noOfPages"
+            android:layout_marginTop="4dp"
+            android:layout_below="@id/bookIcon"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content" />
+
+        <TextView
             android:textColor="#27ae60"
             android:hint="@string/name"
             android:textAppearance="@style/Base.TextAppearance.AppCompat.Large"
@@ -68,6 +76,17 @@
             android:layout_below="@id/bookAuthor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/rateCount"
+            android:width="100dp"
+            android:textSize="19sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:layout_alignBaseline="@+id/rateBook"
+            android:layout_alignBottom="@+id/noOfPages"
+            android:layout_toStartOf="@+id/rateBook" />
 
         <ImageButton
             android:contentDescription="@string/ratecd"

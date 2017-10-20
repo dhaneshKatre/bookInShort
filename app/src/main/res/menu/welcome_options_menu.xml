@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-       <item
+    <item
         android:id="@+id/languageChange"
         android:title="@string/changeLanguage"/>
 
     <item
         android:id="@+id/clearData"
         android:title="@string/cleardata"/>
+    <item
+        android:id="@+id/logOut"
+        android:title="@string/logOut"/>
 
 </menu>

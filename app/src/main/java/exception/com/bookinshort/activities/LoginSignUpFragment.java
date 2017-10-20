@@ -13,8 +13,8 @@ import exception.com.bookinshort.R;
  * Created by MihirPC on 14-10-2017.
  */
 
-public class LoginSingUpFragment extends Fragment {
-    public LoginSingUpFragment() {
+public class LoginSignUpFragment extends Fragment {
+    public LoginSignUpFragment() {
     }
 
     @Override

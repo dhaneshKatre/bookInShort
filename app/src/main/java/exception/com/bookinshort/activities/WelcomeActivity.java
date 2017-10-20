@@ -1,17 +1,25 @@
 package exception.com.bookinshort.activities;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,15 +28,15 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -53,14 +61,15 @@ public class WelcomeActivity extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private RecyclerView.Adapter bookAdapter;
     private List<BookData> bookModelList;
-    private NavigationView navigationView;
     private DatabaseReference bookReference;
     private StorageReference bookIconReference;
     private RecyclerView bookRecyclerView;
+    private FirebaseAuth firebaseAuth;
+    private long count = 0;
+    private static final int MY_PERMISSIONS_REQUEST_STORAGE = 69;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
@@ -77,6 +86,11 @@ public class WelcomeActivity extends AppCompatActivity {
         final Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         progressDialog = new ProgressDialog(this);
+        checkPermissions();
+        firebaseAuth = FirebaseAuth.getInstance();
+        final FirebaseUser user = firebaseAuth.getCurrentUser();
+        if(user != null) Toast.makeText(getApplicationContext(),"Welcome "+user.getDisplayName(),Toast.LENGTH_LONG).show();
+        else Toast.makeText(getApplicationContext(),"Login to unlock exciting features!",Toast.LENGTH_LONG).show();
 
         drawer = (DrawerLayout)findViewById(R.id.draw);
         drawerToggle = new ActionBarDrawerToggle(this,drawer,toolbar,R.string.drawer_open,R.string.drawer_close);
@@ -86,7 +100,7 @@ public class WelcomeActivity extends AppCompatActivity {
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         bookModelList = new ArrayList<>();
 
-        navigationView = (NavigationView)findViewById(R.id.nav_view);
+        final NavigationView navigationView = (NavigationView)findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -120,6 +134,29 @@ public class WelcomeActivity extends AppCompatActivity {
         });
 
     }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //permission sathi function dar veles check karel ahe ka nahi perm, nasel tar nothing is gonna load in recycler vie(double u) xD
+    public boolean checkPermissions(){
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            if(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                        .setTitle("Important Permission")
+                        .setMessage("Kindly grant this permission for neat functioning of this app. App needs this permission for storing loaded images for faster results.").setPositiveButton("okay", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                ActivityCompat.requestPermissions(WelcomeActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},MY_PERMISSIONS_REQUEST_STORAGE);
+                            }
+                        });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else {
+                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},MY_PERMISSIONS_REQUEST_STORAGE);
+            }
+        }
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -161,27 +198,34 @@ public class WelcomeActivity extends AppCompatActivity {
             }
             String nemo = bookName.getString(String.valueOf(i),"");
             loadFromDevice(nemo);
-
          }
     }
     private void loadFromDevice(String nemo) {
+        if(!checkPermissions()){
+            Toast.makeText(getApplicationContext(),"No permission!",Toast.LENGTH_LONG).show();
+            return;
+        }
         File rootPath=new File(Environment.getExternalStorageDirectory().getAbsolutePath(),"bookInShort");
         if (!rootPath.exists()){
             Toast.makeText(this, "OPEN A BOOK FIRST", Toast.LENGTH_SHORT).show();
         }
         final File localFile =  new File(rootPath,nemo+".jpeg");
-        String auth,describ;
+        String auth,describ,noOfPage;
         SharedPreferences namePref = getSharedPreferences(nemo,MODE_PRIVATE);
         auth=namePref.getString("author","");
         describ=namePref.getString("describ","");
-        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth);
+        noOfPage=namePref.getString("noOfPages","");
+        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth, noOfPage);
         bookModelList.add(bookData);
         bookAdapter.notifyDataSetChanged();
-        onBackPressed();
     }
 
-
     public void loadData(final String genre){
+        if(!checkPermissions()) {
+            Toast.makeText(getApplicationContext(), "No permission!", Toast.LENGTH_LONG).show();
+            drawer.closeDrawers();
+            return;
+        }
         bookAdapter = new BookAdapter(bookModelList,this,language,genre);
         bookRecyclerView.setAdapter(bookAdapter);
         bookModelList.clear();
@@ -203,7 +247,21 @@ public class WelcomeActivity extends AppCompatActivity {
                             return;
                         }
                         for (final DataSnapshot data : dataSnapshot.getChildren()) {
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            count = 0; //count global variable ahe
                             final String name = data.getKey();
+                            data.child("Content").getRef().addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    count = dataSnapshot.getChildrenCount(); // jitke Content che chilren (tabs) titke no.of pages
+                                }
+    //ha itka part book madhye kiti page ahet tyakarita hota. check kar ekda. shared pref madhye count kasa save karta yeil vagaire bagh
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+                                    Log.e("mkdkpro",databaseError.getMessage());
+                                }
+                            });
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -211,13 +269,14 @@ public class WelcomeActivity extends AppCompatActivity {
                                     if(!temp.exists()){
                                         temp.mkdir();
                                     }
-                                    String auth,describ;
+                                    String auth,describ, noOfPages;
                                         final File localFile =  new File(temp,name+".jpeg");
                                         if(localFile.exists()){
                                             SharedPreferences namePref = getSharedPreferences(name,MODE_PRIVATE);
                                             auth=namePref.getString("author","");
                                             describ=namePref.getString("describ","");
-                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth);
+                                            noOfPages=namePref.getString("noOfPages","");
+                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth, noOfPages);
                                             bookModelList.add(bookData);
                                             bookAdapter.notifyDataSetChanged();
                                         }
@@ -226,14 +285,16 @@ public class WelcomeActivity extends AppCompatActivity {
                                         final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
                                         final String bookDesString = value.get("Describ").toString();
                                         final String bookAuthorString = value.get("Author").toString();
+                                            //Log.d("mkdkproo",noOfPage);
                                         exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
                                             @Override
                                             public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString );
+                    /////////////////////////////////////////////////////////////////////////////////////
+                                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString, count + ""); //Book data thoda modify karun tyat user ne save kelele rating for each book and pages
+                    // kiti ahet te save kelala. pan retrieve hotana sarve 0 0 0 ase yetat te bagh jamla tar thi is !important, still xD
+                    /////////////////////////////////////////////////////////////////////////////////////
                                                 bookModelList.add(bookData);
                                                 bookAdapter.notifyDataSetChanged();
-
-                                                //Writing To Shared Preference
 
                                                 SharedPreferences bookGenre = getSharedPreferences(genre,MODE_PRIVATE);
                                                 SharedPreferences bookNameAddVal = getSharedPreferences(name,MODE_PRIVATE);
@@ -246,6 +307,7 @@ public class WelcomeActivity extends AppCompatActivity {
                                                 genreEdit.putString(String.valueOf(c), name);
                                                 nameAddEdit.putString("author",bookAuthorString);
                                                 nameAddEdit.putString("bookName",name);
+                                                nameAddEdit.putString("noOfPages",count + "");
                                                 nameAddEdit.putString("describ",bookDesString);
                                                 nameAddEdit.apply();
                                                 genreEdit.apply();
@@ -254,6 +316,7 @@ public class WelcomeActivity extends AppCompatActivity {
                                             @Override
                                             public void onFailure(@NonNull Exception e) {
                                                 Log.e("mkdkpro", e.getMessage());
+                                                progressDialog.dismiss();
                                             }
                                         });
                                     }
@@ -294,7 +357,12 @@ public class WelcomeActivity extends AppCompatActivity {
                 edit.clear();
                 edit.apply();
                 return true;
-
+            case R.id.logOut:
+                firebaseAuth.signOut();
+                if(firebaseAuth.getCurrentUser() == null)
+                    Toast.makeText(getApplicationContext(),"Logged out successfully!",Toast.LENGTH_LONG).show();
+                else  Toast.makeText(getApplicationContext(),"Log out failed!",Toast.LENGTH_LONG).show();
+                return true;
             default: return super.onOptionsItemSelected(item);
         }
     }
