@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "59447096221-4e0qqf7kjmh664old8h8mnikf1ncbgg8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "exception.com.bookinshort",
+            "certificate_hash": "60121cf23a9dbe1edafe431ee48a687e1475ee94"
+          }
+        },
+        {
           "client_id": "59447096221-t1ui2496v94cnh5ng8ech940u5vnan3p.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

@@ -71,7 +71,7 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
                         @Override
                         public void onClick(View v) {
                             float rating = ratingBar.getRating();
-                            Toast.makeText(context,"Your final rating: " + rating,Toast.LENGTH_LONG).show();
+                            Toast.makeText(context,"Your final rating: " + rating,Toast.LENGTH_SHORT).show();
                             dial.dismiss();
                         }
                     });
