@@ -27,7 +27,7 @@ public class tabPagerAdapter extends PagerAdapter {
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
         layoutInflater=(LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View view = layoutInflater.inflate(R.layout.blank_tab_textview,container,false);
+        View view = layoutInflater.inflate(R.layout.scroll_view_inside_viewpager,container,false);
         TextView textView = (TextView)view.findViewById(R.id.mainContent);
         textView.setMovementMethod(new ScrollingMovementMethod());
         bookTab bt = bookList.get(position);
