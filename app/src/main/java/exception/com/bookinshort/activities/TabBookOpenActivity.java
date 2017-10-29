@@ -49,9 +49,10 @@ public class TabBookOpenActivity extends AppCompatActivity{
         viewPager.setAdapter(tpa);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.setupWithViewPager(viewPager, true);
-        if (genre == null) {
-            SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
-            int count = getBookName.getInt("tabCount", 0);
+        SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
+        int lastPage = getBookName.getInt("lastPage",0);
+        int count = getBookName.getInt("tabCount", 0);
+        if (count!=0) {
             for (int i = 1; i <= count; i++) {
                 String abc = getBookName.getString(valueOf(i), "");
                 String tab = getBookName.getString(abc, "");
@@ -59,7 +60,6 @@ public class TabBookOpenActivity extends AppCompatActivity{
                 bookList.add(bt);
                 tpa.notifyDataSetChanged();
             }
-            int lastPage = getBookName.getInt("lastPage",0);
             viewPager.setCurrentItem(lastPage);
         } else {
             databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");

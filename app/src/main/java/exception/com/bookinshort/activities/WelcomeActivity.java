@@ -1,7 +1,6 @@
 package exception.com.bookinshort.activities;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,10 +12,10 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -28,8 +27,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.LinearLayout;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -44,6 +42,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
@@ -53,19 +52,22 @@ import java.util.List;
 
 import exception.com.bookinshort.R;
 
-public class WelcomeActivity extends AppCompatActivity {
+public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
     private DrawerLayout drawer;
     private ActionBarDrawerToggle drawerToggle;
     private String language;
-    private ProgressDialog progressDialog;
+    private ProgressDialog progressDialog,pd1;
     private RecyclerView.Adapter bookAdapter;
+    private String rating,genre,name;
+    private Toolbar toolbar;
     private List<BookData> bookModelList;
     private DatabaseReference bookReference;
     private StorageReference bookIconReference;
     private RecyclerView bookRecyclerView;
     private FirebaseAuth firebaseAuth;
     private long count = 0;
+    private String nameCount;
     private static final int MY_PERMISSIONS_REQUEST_STORAGE = 69;
 
     @Override
@@ -83,13 +85,13 @@ public class WelcomeActivity extends AppCompatActivity {
         bookReference = FirebaseDatabase.getInstance().getReference("Books");
         bookIconReference = FirebaseStorage.getInstance().getReference("Books");
 
-        final Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         progressDialog = new ProgressDialog(this);
         checkPermissions();
         firebaseAuth = FirebaseAuth.getInstance();
         final FirebaseUser user = firebaseAuth.getCurrentUser();
-        if(user != null) Toast.makeText(getApplicationContext(),"Welcome "+user.getDisplayName(),Toast.LENGTH_LONG).show();
+        if(user != null) Toast.makeText(getApplicationContext(),"Welcome "+user.getDisplayName(),Toast.LENGTH_SHORT).show();
         else Toast.makeText(getApplicationContext(),"Login to unlock exciting features!",Toast.LENGTH_LONG).show();
 
         drawer = (DrawerLayout)findViewById(R.id.draw);
@@ -110,12 +112,15 @@ public class WelcomeActivity extends AppCompatActivity {
                         break;
                     case R.id.genre_scifi:
                         loadData("Sci-fi");
+                        genre="Sci-fi";
                         break;
                     case R.id.genre_novel:
                         loadData("Novel");
+                        genre="Novel";
                         break;
                     case R.id.genre_poem:
                         loadData("Poem");
+                        genre="Poem";
                         break;
                     case R.id.nav_about_us:
                         drawer.closeDrawers();
@@ -132,11 +137,10 @@ public class WelcomeActivity extends AppCompatActivity {
                 return true;
             }
         });
+        loadHomeData();
 
     }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //permission sathi function dar veles check karel ahe ka nahi perm, nasel tar nothing is gonna load in recycler vie(double u) xD
-    public boolean checkPermissions(){
+  public boolean checkPermissions(){
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
             if(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)){
                 AlertDialog.Builder builder = new AlertDialog.Builder(this)
@@ -210,12 +214,12 @@ public class WelcomeActivity extends AppCompatActivity {
             Toast.makeText(this, "OPEN A BOOK FIRST", Toast.LENGTH_SHORT).show();
         }
         final File localFile =  new File(rootPath,nemo+".jpeg");
-        String auth,describ,noOfPage;
+        String auth,describ,rating;
         SharedPreferences namePref = getSharedPreferences(nemo,MODE_PRIVATE);
         auth=namePref.getString("author","");
         describ=namePref.getString("describ","");
-        noOfPage=namePref.getString("noOfPages","");
-        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth, noOfPage);
+        rating=namePref.getString("rating","");
+        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth,rating);
         bookModelList.add(bookData);
         bookAdapter.notifyDataSetChanged();
     }
@@ -247,21 +251,8 @@ public class WelcomeActivity extends AppCompatActivity {
                             return;
                         }
                         for (final DataSnapshot data : dataSnapshot.getChildren()) {
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                            count = 0; //count global variable ahe
-                            final String name = data.getKey();
-                            data.child("Content").getRef().addValueEventListener(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    count = dataSnapshot.getChildrenCount(); // jitke Content che chilren (tabs) titke no.of pages
-                                }
-    //ha itka part book madhye kiti page ahet tyakarita hota. check kar ekda. shared pref madhye count kasa save karta yeil vagaire bagh
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-                                    Log.e("mkdkpro",databaseError.getMessage());
-                                }
-                            });
+                            count = dataSnapshot.getChildrenCount();
+                            name = data.getKey();
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -269,66 +260,73 @@ public class WelcomeActivity extends AppCompatActivity {
                                     if(!temp.exists()){
                                         temp.mkdir();
                                     }
-                                    String auth,describ, noOfPages;
+                                    String auth,describ;
                                         final File localFile =  new File(temp,name+".jpeg");
                                         if(localFile.exists()){
                                             SharedPreferences namePref = getSharedPreferences(name,MODE_PRIVATE);
                                             auth=namePref.getString("author","");
                                             describ=namePref.getString("describ","");
-                                            noOfPages=namePref.getString("noOfPages","");
-                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth, noOfPages);
+                                            rating=namePref.getString("rating","");
+                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth,rating);
                                             bookModelList.add(bookData);
                                             bookAdapter.notifyDataSetChanged();
                                         }
                                         else {
-                                        final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
-                                        final StorageReference exactRef = EngSciFiImageRef.child(name+".jpg");
-                                        final String bookDesString = value.get("Describ").toString();
-                                        final String bookAuthorString = value.get("Author").toString();
-                                            //Log.d("mkdkproo",noOfPage);
-                                        exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                    /////////////////////////////////////////////////////////////////////////////////////
-                                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name ,bookDesString  ,bookAuthorString, count + ""); //Book data thoda modify karun tyat user ne save kelele rating for each book and pages
-                    // kiti ahet te save kelala. pan retrieve hotana sarve 0 0 0 ase yetat te bagh jamla tar thi is !important, still xD
-                    /////////////////////////////////////////////////////////////////////////////////////
-                                                bookModelList.add(bookData);
-                                                bookAdapter.notifyDataSetChanged();
+                                                final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
+                                                final StorageReference exactRef = EngSciFiImageRef.child(name + ".jpg");
+                                                final String bookDesString = value.get("Describ").toString();
+                                                final String bookAuthorString = value.get("Author").toString();
+                                                final String rating = value.get("rating").toString();
+                                                nameCount=name+"loaded";
+                                                exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                                                        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, bookDesString, bookAuthorString, rating);
+                                                        bookModelList.add(bookData);
+                                                        bookAdapter.notifyDataSetChanged();
+                                                        SharedPreferences bookGenre = getSharedPreferences(genre, MODE_PRIVATE);
+                                                        SharedPreferences bookNameAddVal = getSharedPreferences(name, MODE_PRIVATE);
+                                                        SharedPreferences.Editor nameAddEdit = bookNameAddVal.edit();
+                                                        SharedPreferences.Editor genreEdit = bookGenre.edit();
+                                                        int c = bookGenre.getInt("count", 0);
+                                                        c++;
+                                                        genreEdit.putInt("count", c);
+                                                        genreEdit.putString(String.valueOf(c), name);
+                                                        nameAddEdit.putString("author", bookAuthorString);
+                                                        nameAddEdit.putString("rating", rating);
+                                                        nameAddEdit.putString("bookName", name);
+                                                        nameAddEdit.putString("describ", bookDesString);
+                                                        nameAddEdit.putString("lang",language);
+                                                        nameAddEdit.putString("genre",genre);
+                                                        nameAddEdit.apply();
+                                                        genreEdit.apply();
+                                                        progressDialog.dismiss();
+                                                    }
+                                                }).addOnFailureListener(new OnFailureListener() {
+                                                    @Override
+                                                    public void onFailure(@NonNull Exception e) {
+                                                        Log.e("WelcomeActivity", e.getMessage());
+                                                        progressDialog.dismiss();
+                                                    }
+                                                }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
+                                                    @Override
+                                                    public void onProgress(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                                        progressDialog.show();
 
-                                                SharedPreferences bookGenre = getSharedPreferences(genre,MODE_PRIVATE);
-                                                SharedPreferences bookNameAddVal = getSharedPreferences(name,MODE_PRIVATE);
-                                                SharedPreferences.Editor nameAddEdit = bookNameAddVal.edit();
-                                                SharedPreferences.Editor genreEdit = bookGenre.edit();
-
-                                                int c = bookGenre.getInt("count", 0);
-                                                c++;
-                                                genreEdit.putInt("count", c);
-                                                genreEdit.putString(String.valueOf(c), name);
-                                                nameAddEdit.putString("author",bookAuthorString);
-                                                nameAddEdit.putString("bookName",name);
-                                                nameAddEdit.putString("noOfPages",count + "");
-                                                nameAddEdit.putString("describ",bookDesString);
-                                                nameAddEdit.apply();
-                                                genreEdit.apply();
-                                            }
-                                        }).addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                Log.e("mkdkpro", e.getMessage());
-                                                progressDialog.dismiss();
-                                            }
-                                        });
-                                    }
+                                                    }
+                                                });
+                                        }
                                 }
                             });
                         }
-                    }
+                        EngSciFiRef.removeEventListener(this);
+                }
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
                         progressDialog.dismiss();
                         Log.e("mkdkpro",databaseError.getMessage());
                     }
+
                 });
             }
         });
@@ -339,6 +337,9 @@ public class WelcomeActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.welcome_options_menu,menu);
+        MenuItem menuItem = menu.findItem(R.id.searchAction);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(menuItem);
+        searchView.setOnQueryTextListener(this);
         return true;
     }
 
@@ -351,13 +352,17 @@ public class WelcomeActivity extends AppCompatActivity {
                  return  true;
             case R.id.clearData:
                 SharedPreferences ms = getSharedPreferences("bookNames",MODE_PRIVATE);
+                SharedPreferences names = getSharedPreferences(name,MODE_PRIVATE);
                 SharedPreferences.Editor edit= ms.edit();
-                File file = new File(Environment.getExternalStorageDirectory(),"bookInShort");
-                file.delete();
+                SharedPreferences.Editor editor = names.edit();
+                File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),"bookInShort");
+                deleteRecursive(file);
                 edit.clear();
+                editor.clear();
+                editor.apply();
                 edit.apply();
                 return true;
-            case R.id.logOut:
+                case R.id.logOut:
                 firebaseAuth.signOut();
                 if(firebaseAuth.getCurrentUser() == null)
                     Toast.makeText(getApplicationContext(),"Logged out successfully!",Toast.LENGTH_LONG).show();
@@ -366,7 +371,34 @@ public class WelcomeActivity extends AppCompatActivity {
             default: return super.onOptionsItemSelected(item);
         }
     }
+    void deleteRecursive(File file){
+        if (file.isDirectory())
+            for (File child : file.listFiles()){
+                deleteRecursive(child);
+            }
+            file.delete();
+    }
 
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        List<BookData> newList = new ArrayList<>();
+        newText = newText.toLowerCase();
+        RecyclerView.Adapter newAdapter = new BookAdapter(newList,this,language,genre);
+        bookRecyclerView.setAdapter(newAdapter);
+        for(BookData bookData: bookModelList){
+            String name = bookData.getName().toLowerCase();
+            if(name.contains(newText)){
+               newList.add(bookData);
+               newAdapter.notifyDataSetChanged();
+            }
+        }
+        return true;
+    }
 }
 
 

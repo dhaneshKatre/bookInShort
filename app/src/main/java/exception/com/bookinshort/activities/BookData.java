@@ -5,31 +5,26 @@ import android.graphics.Bitmap;
 public class BookData {
 
     private Bitmap icon;
-    private String name, description, author, noOfPages, rateCount;
+    private String name, description, author,rating,lang,genre;
 
     public BookData() {
     }
 
-    public BookData(Bitmap icon, String name, String description, String author, String noOfPages) {
+    public BookData(Bitmap icon, String name, String description, String author,String rating) {
         this.icon = icon;
         this.name = name;
         this.description = description;
         this.author = author;
-        this.noOfPages = noOfPages;
+        this.rating = rating;
+
+    }
+    public void setRating(String rating) {
+        this.rating = rating;
     }
 
-    public void setRateCount(String rateCount) {
-        this.rateCount = rateCount;
+    public String getRating() {
+        return rating;
     }
-
-    public String getNoOfPages() {
-        return noOfPages;
-    }
-
-    public String getRateCount() {
-        return rateCount;
-    }
-
 
     public void setName(String name) {
         this.name = name;
@@ -51,4 +46,6 @@ public class BookData {
     public String getAuthor() {
         return author;
     }
+
+
 }
