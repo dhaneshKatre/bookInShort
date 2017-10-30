@@ -90,8 +90,8 @@ public class TabBookOpenActivity extends AppCompatActivity{
                     Toast.makeText(TabBookOpenActivity.this, databaseError.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-            initSharedPref();
         }
+        initSharedPref();
     }
 
     private void initSharedPref() {
@@ -99,15 +99,15 @@ public class TabBookOpenActivity extends AppCompatActivity{
         SharedPreferences.Editor addBookName = storeBookName.edit();
         int c = storeBookName.getInt("current", 0);
         for (int i = 0; i <= c; i++) {
-            String nemo = storeBookName.getString(valueOf(i), "");
-            if (nemo.equalsIgnoreCase(name)) {
-                addBookName.putString(String.valueOf(i),"null");
+            String nemo = storeBookName.getString(String.valueOf(i), "");
+            if (nemo.equals(name)) {
+                addBookName.remove(String.valueOf(i));
                 addBookName.apply();
             }
         }
             c++;
             addBookName.putInt("current", c);
-            addBookName.putString(valueOf(c), name);
+            addBookName.putString(String.valueOf(c), name);
             addBookName.apply();
     }
 

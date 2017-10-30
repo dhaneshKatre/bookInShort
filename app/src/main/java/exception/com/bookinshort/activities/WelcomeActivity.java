@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -51,6 +52,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import exception.com.bookinshort.R;
+
+import static java.lang.String.valueOf;
 
 public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
@@ -92,7 +95,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         firebaseAuth = FirebaseAuth.getInstance();
         final FirebaseUser user = firebaseAuth.getCurrentUser();
         if(user != null) Toast.makeText(getApplicationContext(),"Welcome "+user.getDisplayName(),Toast.LENGTH_SHORT).show();
-        else Toast.makeText(getApplicationContext(),"Login to unlock exciting features!",Toast.LENGTH_LONG).show();
+        else Toast.makeText(getApplicationContext(),"Login to unlock exciting features!",Toast.LENGTH_SHORT).show();
 
         drawer = (DrawerLayout)findViewById(R.id.draw);
         drawerToggle = new ActionBarDrawerToggle(this,drawer,toolbar,R.string.drawer_open,R.string.drawer_close);
@@ -197,13 +200,69 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         SharedPreferences bookName = getSharedPreferences("bookNames",MODE_PRIVATE);
         int count = bookName.getInt("current",0);
         for (int i = count;i>=1;i--){
-            if(bookName.getString(String.valueOf(i),"").equalsIgnoreCase("null")){
-                continue;
-            }
             String nemo = bookName.getString(String.valueOf(i),"");
-            loadFromDevice(nemo);
+            if (!nemo.isEmpty()){
+                loadFromDevice(nemo);
+            }
          }
+         swipeToDel();
     }
+
+    private void swipeToDel() {
+        final ItemTouchHelper.SimpleCallback swipe = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                final int position = viewHolder.getAdapterPosition();
+
+                if (direction == ItemTouchHelper.LEFT) {
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(WelcomeActivity.this);
+                    builder.setMessage("Are you sure to delete?");
+                    builder.setPositiveButton("REMOVE", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            removeFromSP(position);
+                            bookModelList.remove(position);
+                            bookAdapter.notifyItemRemoved(position);
+
+                        }
+                    }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            bookAdapter.notifyItemRemoved(position + 1);
+                            bookAdapter.notifyItemRangeChanged(position, bookAdapter.getItemCount());
+                        }
+                    }).show();
+                }
+            }
+        };
+
+
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipe);
+        itemTouchHelper.attachToRecyclerView(bookRecyclerView);
+    }
+
+    private void removeFromSP(int position) {
+        SharedPreferences storeBookName = getSharedPreferences("bookNames", MODE_PRIVATE);
+        SharedPreferences.Editor addBookName = storeBookName.edit();
+        int c = storeBookName.getInt("current", 0);
+        BookData bookData = bookModelList.get(position);
+        for (int i = 0; i <= c; i++) {
+            String nemo = storeBookName.getString(valueOf(i), "");
+            if (nemo.equalsIgnoreCase(bookData.getName())) {
+                addBookName.remove(String.valueOf(i));
+                addBookName.apply();
+            }
+        }
+
+    }
+
     private void loadFromDevice(String nemo) {
         if(!checkPermissions()){
             Toast.makeText(getApplicationContext(),"No permission!",Toast.LENGTH_LONG).show();
@@ -238,8 +297,6 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         getSupportActionBar().setTitle(genre);
         final DatabaseReference EngSciFiRef = bookReference.child(language).child(genre);
         final StorageReference EngSciFiImageRef = bookIconReference.child(language).child(genre);
-        progressDialog.setMessage("Loading Content...");
-        progressDialog.show();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -320,6 +377,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                             });
                         }
                         EngSciFiRef.removeEventListener(this);
+                        progressDialog.dismiss();
                 }
                     @Override
                     public void onCancelled(DatabaseError databaseError) {

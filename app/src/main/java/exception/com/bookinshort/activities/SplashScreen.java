@@ -22,7 +22,7 @@ public class SplashScreen extends AppCompatActivity {
         final ImageView iv = (ImageView)findViewById(R.id.imageView);
         final TextView textView = (TextView)findViewById(R.id.bookText);
         AlphaAnimation alphaAnimation = new AlphaAnimation(0.0f,1.0f);
-        alphaAnimation.setDuration(1500);
+        alphaAnimation.setDuration(500);
         alphaAnimation.setStartOffset(10);
         alphaAnimation.setFillAfter(true);
         SharedPreferences sharedPreferences = getSharedPreferences("defaultLang",MODE_PRIVATE);
