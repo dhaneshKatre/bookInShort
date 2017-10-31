@@ -1,6 +1,7 @@
 package exception.com.bookinshort.activities;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
@@ -28,6 +30,7 @@ import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -72,6 +75,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     private long count = 0;
     private String nameCount;
     private static final int MY_PERMISSIONS_REQUEST_STORAGE = 69;
+    private Snackbar snackbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +108,8 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         bookRecyclerView.setHasFixedSize(true);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         bookModelList = new ArrayList<>();
+
+        snackbar= Snackbar.make(getWindow().getDecorView(),"Snackbar",Snackbar.LENGTH_SHORT);
 
         final NavigationView navigationView = (NavigationView)findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -138,10 +144,10 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                 else item.setChecked(true);
                 item.setChecked(true);
                 return true;
+
             }
         });
         loadHomeData();
-
     }
   public boolean checkPermissions(){
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
@@ -218,9 +224,9 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 final int position = viewHolder.getAdapterPosition();
-
+                final BookData bookData = bookModelList.get(position);
                 if (direction == ItemTouchHelper.LEFT) {
-
+                    /*
                     AlertDialog.Builder builder = new AlertDialog.Builder(WelcomeActivity.this);
                     builder.setMessage("Are you sure to delete?");
                     builder.setPositiveButton("REMOVE", new DialogInterface.OnClickListener() {
@@ -234,33 +240,50 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                     }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            bookAdapter.notifyItemRemoved(position + 1);
+                            bookAdapter.notifyItemChanged(position);
+                        }
+                    }).show();  */
+                    final String nem = bookData.getName();
+                    bookModelList.remove(position);
+                    bookAdapter.notifyItemRemoved(position);
+                    Snackbar.make(getWindow().getDecorView(),nem+" is removed",Snackbar.LENGTH_SHORT)
+                            .addCallback( new Snackbar.Callback() {
+                        @Override
+                        public void onDismissed(Snackbar snackbar, int event) {
+                            switch (event){
+                                case DISMISS_EVENT_TIMEOUT:
+                                    removeFromSP(position,nem);
+                                    break;
+
+                            }
+                        }
+                    }).setAction("Undo", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            bookModelList.add(position,bookData);
+                            bookAdapter.notifyItemInserted(position);
                             bookAdapter.notifyItemRangeChanged(position, bookAdapter.getItemCount());
                         }
                     }).show();
                 }
+                if(direction==ItemTouchHelper.RIGHT){
+                }
             }
         };
-
-
-
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipe);
         itemTouchHelper.attachToRecyclerView(bookRecyclerView);
     }
-
-    private void removeFromSP(int position) {
+    private void removeFromSP(int position, String nem) {
         SharedPreferences storeBookName = getSharedPreferences("bookNames", MODE_PRIVATE);
         SharedPreferences.Editor addBookName = storeBookName.edit();
         int c = storeBookName.getInt("current", 0);
-        BookData bookData = bookModelList.get(position);
         for (int i = 0; i <= c; i++) {
             String nemo = storeBookName.getString(valueOf(i), "");
-            if (nemo.equalsIgnoreCase(bookData.getName())) {
+            if (nemo.equalsIgnoreCase(nem)){
                 addBookName.remove(String.valueOf(i));
                 addBookName.apply();
             }
         }
-
     }
 
     private void loadFromDevice(String nemo) {
@@ -457,6 +480,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         }
         return true;
     }
+
 }
 
 
