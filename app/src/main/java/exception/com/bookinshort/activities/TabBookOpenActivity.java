@@ -6,7 +6,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.text.TextUtils;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -18,6 +18,9 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import exception.com.bookinshort.R;
 
 import static java.lang.String.valueOf;
@@ -31,6 +34,7 @@ public class TabBookOpenActivity extends AppCompatActivity{
     private Toolbar toolbar;
     private List<bookTab> bookList;
     private TabLayout tabLayout;
+    private Pattern pattern;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +48,15 @@ public class TabBookOpenActivity extends AppCompatActivity{
         toolbar.setTitle(name);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+
+        List<String> tokens = new ArrayList<String>();
+        tokens.add("<strong>");
+        tokens.add("<br>");
+        tokens.add("<h1>");
+        tokens.add("<italic>");
+        String patternString =TextUtils.join("", tokens);
+         pattern = Pattern.compile(patternString);
+
         bookList = new ArrayList<>();
         tpa = new tabPagerAdapter(this, bookList);
         viewPager.setAdapter(tpa);
@@ -55,15 +68,16 @@ public class TabBookOpenActivity extends AppCompatActivity{
         if (count!=0) {
             for (int i = 1; i <= count; i++) {
                 String abc = getBookName.getString(valueOf(i), "");
-                String tab = getBookName.getString(abc, "");
-                bookTab bt = new bookTab(tab);
+                String tabContent = getBookName.getString(abc, "");
+                escapeSeq(tabContent);
+                bookTab bt = new bookTab(tabContent);
                 bookList.add(bt);
                 tpa.notifyDataSetChanged();
             }
             viewPager.setCurrentItem(lastPage);
         } else {
             databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");
-            databaseReference.addValueEventListener(new ValueEventListener() {
+            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     Long count = dataSnapshot.getChildrenCount();
@@ -73,6 +87,9 @@ public class TabBookOpenActivity extends AppCompatActivity{
                     for (long i = 1; i <= count; i++) {
                         String abc = "tab" + valueOf(i);
                         bookTab bt = new bookTab((String) value.get(abc));
+                        String tabNumber = "tab" + valueOf(i);
+                        String tabContent = bt.getTab();
+                        escapeSeq(tabContent);
                         bookList.add(bt);
                         tpa.notifyDataSetChanged();
                         editor.putInt("tabCount", (int) i);
@@ -80,18 +97,26 @@ public class TabBookOpenActivity extends AppCompatActivity{
                         editor.putString(abc, (String) value.get(abc));
                         editor.apply();
                     }
-                    int lastPage = val.getInt("lastPage",0);
-                    viewPager.setCurrentItem(lastPage);
-                }
+                    }
 
                 @Override
                 public void onCancelled(DatabaseError databaseError) {
-                    Log.e("mkdk", databaseError.getDetails());
-                    Toast.makeText(TabBookOpenActivity.this, databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+
                 }
             });
         }
+
         initSharedPref();
+    }
+
+
+    private void escapeSeq(String tabContent) {
+        Matcher matcher = pattern.matcher(tabContent);
+        while (matcher.matches()){
+            String special = tabContent.substring(matcher.start(),matcher.end()-1);
+            Toast.makeText(TabBookOpenActivity.this, special, Toast.LENGTH_SHORT).show();
+
+        }
     }
 
     private void initSharedPref() {

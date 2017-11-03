@@ -226,23 +226,6 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                 final int position = viewHolder.getAdapterPosition();
                 final BookData bookData = bookModelList.get(position);
                 if (direction == ItemTouchHelper.LEFT) {
-                    /*
-                    AlertDialog.Builder builder = new AlertDialog.Builder(WelcomeActivity.this);
-                    builder.setMessage("Are you sure to delete?");
-                    builder.setPositiveButton("REMOVE", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            removeFromSP(position);
-                            bookModelList.remove(position);
-                            bookAdapter.notifyItemRemoved(position);
-
-                        }
-                    }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            bookAdapter.notifyItemChanged(position);
-                        }
-                    }).show();  */
                     final String nem = bookData.getName();
                     bookModelList.remove(position);
                     bookAdapter.notifyItemRemoved(position);
@@ -333,84 +316,71 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                         for (final DataSnapshot data : dataSnapshot.getChildren()) {
                             count = dataSnapshot.getChildrenCount();
                             name = data.getKey();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    final File temp = new File(Environment.getExternalStorageDirectory(),"bookInShort");
-                                    if(!temp.exists()){
-                                        temp.mkdir();
+                            final File temp = new File(Environment.getExternalStorageDirectory(), "bookInShort");
+                            if (!temp.exists()) {
+                                temp.mkdir();
+                            }
+                            String auth, describ;
+                            final File localFile = new File(temp, name + ".jpeg");
+                            if (localFile.exists()) {
+                                SharedPreferences namePref = getSharedPreferences(name, MODE_PRIVATE);
+                                auth = namePref.getString("author", "");
+                                describ = namePref.getString("describ", "");
+                                rating = namePref.getString("rating", "");
+                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth, rating);
+                                bookModelList.add(bookData);
+                                bookAdapter.notifyDataSetChanged();
+                            } else {
+                                final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
+                                final StorageReference exactRef = EngSciFiImageRef.child(name+ ".jpg");
+                                final String bookDesString = value.get("Describ").toString();
+                                final String bookAuthorString = value.get("Author").toString();
+                                final String rating = value.get("rating").toString();
+                                nameCount = name + "loaded";
+                                exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                                        progressDialog.dismiss();
+                                        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, bookDesString, bookAuthorString, rating);
+                                        bookModelList.add(bookData);
+                                        bookAdapter.notifyDataSetChanged();
+                                        SharedPreferences bookNameAddVal = getSharedPreferences(name, MODE_PRIVATE);
+                                        SharedPreferences.Editor nameAddEdit = bookNameAddVal.edit();
+                                        nameAddEdit.putString("author", bookAuthorString);
+                                        nameAddEdit.putString("rating", rating);
+                                        nameAddEdit.putString("bookName", name);
+                                        nameAddEdit.putString("describ", bookDesString);
+                                        nameAddEdit.putString("lang", language);
+                                        nameAddEdit.putString("genre", genre);
+                                        nameAddEdit.apply();
                                     }
-                                    String auth,describ;
-                                        final File localFile =  new File(temp,name+".jpeg");
-                                        if(localFile.exists()){
-                                            SharedPreferences namePref = getSharedPreferences(name,MODE_PRIVATE);
-                                            auth=namePref.getString("author","");
-                                            describ=namePref.getString("describ","");
-                                            rating=namePref.getString("rating","");
-                                            BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth,rating);
-                                            bookModelList.add(bookData);
-                                            bookAdapter.notifyDataSetChanged();
-                                        }
-                                        else {
-                                                final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
-                                                final StorageReference exactRef = EngSciFiImageRef.child(name + ".jpg");
-                                                final String bookDesString = value.get("Describ").toString();
-                                                final String bookAuthorString = value.get("Author").toString();
-                                                final String rating = value.get("rating").toString();
-                                                nameCount=name+"loaded";
-                                                exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                                                        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, bookDesString, bookAuthorString, rating);
-                                                        bookModelList.add(bookData);
-                                                        bookAdapter.notifyDataSetChanged();
-                                                        SharedPreferences bookGenre = getSharedPreferences(genre, MODE_PRIVATE);
-                                                        SharedPreferences bookNameAddVal = getSharedPreferences(name, MODE_PRIVATE);
-                                                        SharedPreferences.Editor nameAddEdit = bookNameAddVal.edit();
-                                                        SharedPreferences.Editor genreEdit = bookGenre.edit();
-                                                        int c = bookGenre.getInt("count", 0);
-                                                        c++;
-                                                        genreEdit.putInt("count", c);
-                                                        genreEdit.putString(String.valueOf(c), name);
-                                                        nameAddEdit.putString("author", bookAuthorString);
-                                                        nameAddEdit.putString("rating", rating);
-                                                        nameAddEdit.putString("bookName", name);
-                                                        nameAddEdit.putString("describ", bookDesString);
-                                                        nameAddEdit.putString("lang",language);
-                                                        nameAddEdit.putString("genre",genre);
-                                                        nameAddEdit.apply();
-                                                        genreEdit.apply();
-                                                        progressDialog.dismiss();
-                                                    }
-                                                }).addOnFailureListener(new OnFailureListener() {
-                                                    @Override
-                                                    public void onFailure(@NonNull Exception e) {
-                                                        Log.e("WelcomeActivity", e.getMessage());
-                                                        progressDialog.dismiss();
-                                                    }
-                                                }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
-                                                    @Override
-                                                    public void onProgress(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                                        progressDialog.show();
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.e("WelcomeActivity", e.getMessage());
+                                        progressDialog.dismiss();
+                                    }
+                                }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
+                                    @Override
+                                    public void onProgress(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                        progressDialog.show();
 
-                                                    }
-                                                });
-                                        }
-                                }
-                            });
+                                    }
+                                });
+                            }
                         }
                         EngSciFiRef.removeEventListener(this);
                         progressDialog.dismiss();
-                }
+                    }
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
                         progressDialog.dismiss();
                         Log.e("mkdkpro",databaseError.getMessage());
                     }
-
                 });
-            }
+                }
         });
+
         progressDialog.dismiss();
         onBackPressed();
     }
