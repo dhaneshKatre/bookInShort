@@ -1,12 +1,20 @@
 package exception.com.bookinshort.activities;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
+import android.support.design.widget.TabItem;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -29,13 +37,12 @@ public class TabBookOpenActivity extends AppCompatActivity{
 
     private ViewPager viewPager;
     private DatabaseReference databaseReference;
-    private String lang,genre,name;
+    private String lang,genre,name,fromLocation;
     private tabPagerAdapter tpa;
     private Toolbar toolbar;
     private List<bookTab> bookList;
-    private TabLayout tabLayout;
-    private Pattern pattern;
-    @Override
+    private static TabLayout tabLayout;
+    @SuppressLint("NewApi")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tab_book_open);
@@ -45,78 +52,109 @@ public class TabBookOpenActivity extends AppCompatActivity{
         lang = getIntent().getExtras().getString("lang");
         genre = getIntent().getExtras().getString("genre");
         name = getIntent().getExtras().getString("name");
+        fromLocation = getIntent().getExtras().getString("fromLocation");
         toolbar.setTitle(name);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-
-        List<String> tokens = new ArrayList<String>();
-        tokens.add("<strong>");
-        tokens.add("<br>");
-        tokens.add("<h1>");
-        tokens.add("<italic>");
-        String patternString =TextUtils.join("", tokens);
-         pattern = Pattern.compile(patternString);
 
         bookList = new ArrayList<>();
         tpa = new tabPagerAdapter(this, bookList);
         viewPager.setAdapter(tpa);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        tabLayout.setupWithViewPager(viewPager, true);
-        SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
-        int lastPage = getBookName.getInt("lastPage",0);
-        int count = getBookName.getInt("tabCount", 0);
-        if (count!=0) {
+        if (fromLocation.equals("local")) {
+            SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
+            int lastPage = getBookName.getInt("lastPage",0);
+            int count = getBookName.getInt("tabCount", 0);
+            if(count==0) loadFromFirebase();
             for (int i = 1; i <= count; i++) {
+                TabLayout.Tab newTab = tabLayout.newTab();
+                newTab.setText(String.valueOf(i));
+                tabLayout.addTab(newTab);
                 String abc = getBookName.getString(valueOf(i), "");
                 String tabContent = getBookName.getString(abc, "");
-                escapeSeq(tabContent);
                 bookTab bt = new bookTab(tabContent);
                 bookList.add(bt);
                 tpa.notifyDataSetChanged();
             }
             viewPager.setCurrentItem(lastPage);
-        } else {
-            databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");
-            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    Long count = dataSnapshot.getChildrenCount();
-                    HashMap<String, Object> value = (HashMap<String, Object>) dataSnapshot.getValue();
-                    SharedPreferences val = getSharedPreferences(name, MODE_PRIVATE);
-                    SharedPreferences.Editor editor = val.edit();
-                    for (long i = 1; i <= count; i++) {
-                        String abc = "tab" + valueOf(i);
-                        bookTab bt = new bookTab((String) value.get(abc));
-                        String tabNumber = "tab" + valueOf(i);
-                        String tabContent = bt.getTab();
-                        escapeSeq(tabContent);
-                        bookList.add(bt);
-                        tpa.notifyDataSetChanged();
-                        editor.putInt("tabCount", (int) i);
-                        editor.putString(valueOf(i), abc);
-                        editor.putString(abc, (String) value.get(abc));
-                        editor.apply();
-                    }
-                    }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-        }
+        } else loadFromFirebase();
 
         initSharedPref();
+        onScroll();
+        onTabSelect();
+
     }
 
+    private void onTabSelect() {
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition());
+            }
 
-    private void escapeSeq(String tabContent) {
-        Matcher matcher = pattern.matcher(tabContent);
-        while (matcher.matches()){
-            String special = tabContent.substring(matcher.start(),matcher.end()-1);
-            Toast.makeText(TabBookOpenActivity.this, special, Toast.LENGTH_SHORT).show();
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition());
+            }
+        });
+    }
+
+    private void loadFromFirebase() {
+        databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Long count = dataSnapshot.getChildrenCount();
+                HashMap<String, Object> value = (HashMap<String, Object>) dataSnapshot.getValue();
+                SharedPreferences val = getSharedPreferences(name, MODE_PRIVATE);
+                SharedPreferences.Editor editor = val.edit();
+                for (long i = 1; i <= count; i++) {
+                    String tab_i = "tab" + valueOf(i);
+                    bookTab bt = new bookTab((String) value.get(tab_i));
+                    String tabNumber = "tab" + valueOf(i);
+                    String tabContent = bt.getTab();
+                    bookList.add(bt);
+                    tpa.notifyDataSetChanged();
+                    editor.putInt("tabCount", (int) i);
+                    editor.putString(valueOf(i), tab_i);
+                    editor.putString(tab_i, (String) value.get(tab_i));
+                    editor.apply();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    @SuppressLint("NewApi")
+    private void onScroll() {
+    viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            tabLayout.setVisibility(View.VISIBLE);
+            tabLayout.setScrollPosition(position,0f,true);
+            //TabLayout.Tab tab = tabLayout.getTabAt(position);
+            //tab.select();
+        }
+
+        @Override
+        public void onPageSelected(int position) {
 
         }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+
+        }
+    });
     }
 
     private void initSharedPref() {
@@ -155,4 +193,5 @@ public class TabBookOpenActivity extends AppCompatActivity{
         lastPage.apply();
         super.onDestroy();
     }
+
 }

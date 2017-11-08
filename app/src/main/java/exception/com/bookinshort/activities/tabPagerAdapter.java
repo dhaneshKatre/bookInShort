@@ -2,6 +2,7 @@ package exception.com.bookinshort.activities;
 
 import android.content.Context;
 import android.support.v4.view.PagerAdapter;
+import android.text.Html;
 import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,7 +32,7 @@ public class tabPagerAdapter extends PagerAdapter {
         TextView textView = (TextView)view.findViewById(R.id.mainContent);
         textView.setMovementMethod(new ScrollingMovementMethod());
         bookTab bt = bookList.get(position);
-        textView.setText(bt.getTab());
+        textView.setText(Html.fromHtml(bt.getTab()));
         container.addView(view);
         return view;
     }

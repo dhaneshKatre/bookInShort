@@ -30,14 +30,15 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
 
     private List<BookData> bookModelList;
     private Context context;
-    private String lang,genre;
+    private String lang,genre,fromLocation;
     private View view;
 
-    public BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre) {
+    public BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre, String fromLocation) {
         this.bookModelList = bookModelList;
         this.context = context;
         this.lang=lang ;
         this.genre=genre;
+        this.fromLocation=fromLocation;
 
     }
 
@@ -106,6 +107,7 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
                 Intent intent= new Intent(context,TabBookOpenActivity.class);
                 intent.putExtra("lang",lang);
                 intent.putExtra("genre",genre);
+                intent.putExtra("fromLocation",fromLocation);
                 intent.putExtra("name",bookData.getName());
                 context.startActivity(intent);
             }

@@ -74,6 +74,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     private FirebaseAuth firebaseAuth;
     private long count = 0;
     private String nameCount;
+    private  ItemTouchHelper itemTouchHelper;
     private static final int MY_PERMISSIONS_REQUEST_STORAGE = 69;
     private Snackbar snackbar;
 
@@ -200,7 +201,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     public void loadHomeData() {
         drawer.closeDrawers();
         getSupportActionBar().setTitle("Home");
-        bookAdapter = new BookAdapter(bookModelList,this,language,null);
+        bookAdapter = new BookAdapter(bookModelList,this,language,null,"local");
         bookRecyclerView.setAdapter(bookAdapter);
         bookModelList.clear();
         SharedPreferences bookName = getSharedPreferences("bookNames",MODE_PRIVATE);
@@ -253,7 +254,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                 }
             }
         };
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipe);
+        itemTouchHelper = new ItemTouchHelper(swipe);
         itemTouchHelper.attachToRecyclerView(bookRecyclerView);
     }
     private void removeFromSP(int position, String nem) {
@@ -270,23 +271,26 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     }
 
     private void loadFromDevice(String nemo) {
-        if(!checkPermissions()){
-            Toast.makeText(getApplicationContext(),"No permission!",Toast.LENGTH_LONG).show();
+        if (!checkPermissions()) {
+            Toast.makeText(getApplicationContext(), "No permission!", Toast.LENGTH_LONG).show();
             return;
         }
-        File rootPath=new File(Environment.getExternalStorageDirectory().getAbsolutePath(),"bookInShort");
-        if (!rootPath.exists()){
+        File rootPath = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "bookInShort");
+        if (!rootPath.exists()) {
             Toast.makeText(this, "OPEN A BOOK FIRST", Toast.LENGTH_SHORT).show();
+        } else {
+            final File localFile = new File(rootPath, nemo + ".jpeg");
+            if (localFile.exists()) {
+                String auth, describ, rating;
+                SharedPreferences namePref = getSharedPreferences(nemo, MODE_PRIVATE);
+                auth = namePref.getString("author", "");
+                describ = namePref.getString("describ", "");
+                rating = namePref.getString("rating", "");
+                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth, rating);
+                bookModelList.add(bookData);
+                bookAdapter.notifyDataSetChanged();
+            }
         }
-        final File localFile =  new File(rootPath,nemo+".jpeg");
-        String auth,describ,rating;
-        SharedPreferences namePref = getSharedPreferences(nemo,MODE_PRIVATE);
-        auth=namePref.getString("author","");
-        describ=namePref.getString("describ","");
-        rating=namePref.getString("rating","");
-        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), nemo, describ, auth,rating);
-        bookModelList.add(bookData);
-        bookAdapter.notifyDataSetChanged();
     }
 
     public void loadData(final String genre){
@@ -295,7 +299,8 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
             drawer.closeDrawers();
             return;
         }
-        bookAdapter = new BookAdapter(bookModelList,this,language,genre);
+        itemTouchHelper.attachToRecyclerView(null);
+        bookAdapter = new BookAdapter(bookModelList,this,language,genre,"firebase");
         bookRecyclerView.setAdapter(bookAdapter);
         bookModelList.clear();
         drawer.closeDrawers();
@@ -439,7 +444,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     public boolean onQueryTextChange(String newText) {
         List<BookData> newList = new ArrayList<>();
         newText = newText.toLowerCase();
-        RecyclerView.Adapter newAdapter = new BookAdapter(newList,this,language,genre);
+        RecyclerView.Adapter newAdapter = new BookAdapter(newList,this,language,genre,"local");
         bookRecyclerView.setAdapter(newAdapter);
         for(BookData bookData: bookModelList){
             String name = bookData.getName().toLowerCase();
