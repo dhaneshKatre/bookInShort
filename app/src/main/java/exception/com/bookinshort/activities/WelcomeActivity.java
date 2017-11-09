@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -72,8 +73,6 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     private StorageReference bookIconReference;
     private RecyclerView bookRecyclerView;
     private FirebaseAuth firebaseAuth;
-    private long count = 0;
-    private String nameCount;
     private  ItemTouchHelper itemTouchHelper;
     private static final int MY_PERMISSIONS_REQUEST_STORAGE = 69;
     private Snackbar snackbar;
@@ -216,7 +215,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
     }
 
     private void swipeToDel() {
-        final ItemTouchHelper.SimpleCallback swipe = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+        final ItemTouchHelper.SimpleCallback swipe = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 return false;
@@ -249,8 +248,6 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                             bookAdapter.notifyItemRangeChanged(position, bookAdapter.getItemCount());
                         }
                     }).show();
-                }
-                if(direction==ItemTouchHelper.RIGHT){
                 }
             }
         };
@@ -308,9 +305,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         getSupportActionBar().setTitle(genre);
         final DatabaseReference EngSciFiRef = bookReference.child(language).child(genre);
         final StorageReference EngSciFiImageRef = bookIconReference.child(language).child(genre);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+
                 EngSciFiRef.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -319,41 +314,38 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                             return;
                         }
                         for (final DataSnapshot data : dataSnapshot.getChildren()) {
-                            count = dataSnapshot.getChildrenCount();
-                            name = data.getKey();
                             final File temp = new File(Environment.getExternalStorageDirectory(), "bookInShort");
                             if (!temp.exists()) {
                                 temp.mkdir();
                             }
                             String auth, describ;
-                            final File localFile = new File(temp, name + ".jpeg");
+                            final File localFile = new File(temp, data.getKey() + ".jpeg");
                             if (localFile.exists()) {
-                                SharedPreferences namePref = getSharedPreferences(name, MODE_PRIVATE);
+                                SharedPreferences namePref = getSharedPreferences(data.getKey(), MODE_PRIVATE);
                                 auth = namePref.getString("author", "");
                                 describ = namePref.getString("describ", "");
                                 rating = namePref.getString("rating", "");
-                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, describ, auth, rating);
+                                BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), data.getKey(), describ, auth, rating);
                                 bookModelList.add(bookData);
                                 bookAdapter.notifyDataSetChanged();
                             } else {
                                 final HashMap<String, Object> value = (HashMap<String, Object>) data.getValue();
-                                final StorageReference exactRef = EngSciFiImageRef.child(name+ ".jpg");
+                                final StorageReference exactRef = EngSciFiImageRef.child(data.getKey()+ ".jpg");
                                 final String bookDesString = value.get("Describ").toString();
                                 final String bookAuthorString = value.get("Author").toString();
                                 final String rating = value.get("rating").toString();
-                                nameCount = name + "loaded";
                                 exactRef.getFile(localFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
                                     @Override
                                     public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
                                         progressDialog.dismiss();
-                                        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), name, bookDesString, bookAuthorString, rating);
+                                        BookData bookData = new BookData(BitmapFactory.decodeFile(localFile.getAbsolutePath()), data.getKey(), bookDesString, bookAuthorString, rating);
                                         bookModelList.add(bookData);
                                         bookAdapter.notifyDataSetChanged();
-                                        SharedPreferences bookNameAddVal = getSharedPreferences(name, MODE_PRIVATE);
+                                        SharedPreferences bookNameAddVal = getSharedPreferences(data.getKey(), MODE_PRIVATE);
                                         SharedPreferences.Editor nameAddEdit = bookNameAddVal.edit();
                                         nameAddEdit.putString("author", bookAuthorString);
                                         nameAddEdit.putString("rating", rating);
-                                        nameAddEdit.putString("bookName", name);
+                                        nameAddEdit.putString("bookName", data.getKey());
                                         nameAddEdit.putString("describ", bookDesString);
                                         nameAddEdit.putString("lang", language);
                                         nameAddEdit.putString("genre", genre);
@@ -368,6 +360,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                                 }).addOnProgressListener(new OnProgressListener<FileDownloadTask.TaskSnapshot>() {
                                     @Override
                                     public void onProgress(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                        progressDialog.setTitle(data.getKey()+" is Loading");
                                         progressDialog.show();
 
                                     }
@@ -383,8 +376,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                         Log.e("mkdkpro",databaseError.getMessage());
                     }
                 });
-                }
-        });
+
 
         progressDialog.dismiss();
         onBackPressed();
@@ -454,6 +446,28 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
             }
         }
         return true;
+    }
+
+    private class WelcomeAsync extends AsyncTask<Void,Void,Void>{
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            return null;
+        }
     }
 
 }

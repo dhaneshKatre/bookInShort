@@ -116,8 +116,9 @@ public class TabBookOpenActivity extends AppCompatActivity{
                 for (long i = 1; i <= count; i++) {
                     String tab_i = "tab" + valueOf(i);
                     bookTab bt = new bookTab((String) value.get(tab_i));
-                    String tabNumber = "tab" + valueOf(i);
-                    String tabContent = bt.getTab();
+                    TabLayout.Tab newTab = tabLayout.newTab();
+                    newTab.setText(String.valueOf(i));
+                    tabLayout.addTab(newTab);
                     bookList.add(bt);
                     tpa.notifyDataSetChanged();
                     editor.putInt("tabCount", (int) i);
