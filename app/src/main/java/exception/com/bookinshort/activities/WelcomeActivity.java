@@ -305,7 +305,9 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         getSupportActionBar().setTitle(genre);
         final DatabaseReference EngSciFiRef = bookReference.child(language).child(genre);
         final StorageReference EngSciFiImageRef = bookIconReference.child(language).child(genre);
-
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
                 EngSciFiRef.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -378,8 +380,12 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                 });
 
 
-        progressDialog.dismiss();
-        onBackPressed();
+                progressDialog.dismiss();
+                onBackPressed();
+
+            }
+        });
+
     }
 
     @Override
@@ -448,27 +454,6 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         return true;
     }
 
-    private class WelcomeAsync extends AsyncTask<Void,Void,Void>{
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            return null;
-        }
-    }
 
 }
 
