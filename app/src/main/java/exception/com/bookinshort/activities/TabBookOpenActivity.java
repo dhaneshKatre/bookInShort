@@ -58,31 +58,31 @@ public class TabBookOpenActivity extends AppCompatActivity{
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         bookList = new ArrayList<>();
-        tpa = new tabPagerAdapter(this, bookList);
+        tpa = new tabPagerAdapter(this, bookList,name);
         viewPager.setAdapter(tpa);
         tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        if (fromLocation.equals("local")) {
-            SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
-            int lastPage = getBookName.getInt("lastPage",0);
-            int count = getBookName.getInt("tabCount", 0);
-            if(count==0) loadFromFirebase();
-            for (int i = 1; i <= count; i++) {
-                TabLayout.Tab newTab = tabLayout.newTab();
-                newTab.setText(String.valueOf(i));
-                tabLayout.addTab(newTab);
-                String abc = getBookName.getString(valueOf(i), "");
-                String tabContent = getBookName.getString(abc, "");
-                bookTab bt = new bookTab(tabContent);
-                bookList.add(bt);
-                tpa.notifyDataSetChanged();
-            }
-            viewPager.setCurrentItem(lastPage);
-        } else loadFromFirebase();
-
+        if (fromLocation.equals("local")||genre.equals("local")) loadFromLocal();
+        else loadFromFirebase();
         initSharedPref();
         onScroll();
         onTabSelect();
 
+    }
+
+    private void loadFromLocal() {
+        SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
+        int lastPage = getBookName.getInt("lastPage",0);
+        int count = getBookName.getInt("tabCount", 0);
+        for (int i = 1; i <= count; i++) {
+            TabLayout.Tab newTab = tabLayout.newTab();
+            newTab.setText(String.valueOf(i));
+            tabLayout.addTab(newTab);
+            String tabContent = getBookName.getString("tab"+valueOf(i), "");
+            bookTab bt = new bookTab(tabContent,"local");
+            bookList.add(bt);
+            tpa.notifyDataSetChanged();
+        }
+        viewPager.setCurrentItem(lastPage);
     }
 
     private void onTabSelect() {
@@ -105,34 +105,56 @@ public class TabBookOpenActivity extends AppCompatActivity{
     }
 
     private void loadFromFirebase() {
-        databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Long count = dataSnapshot.getChildrenCount();
-                HashMap<String, Object> value = (HashMap<String, Object>) dataSnapshot.getValue();
-                SharedPreferences val = getSharedPreferences(name, MODE_PRIVATE);
-                SharedPreferences.Editor editor = val.edit();
-                for (long i = 1; i <= count; i++) {
-                    String tab_i = "tab" + valueOf(i);
-                    bookTab bt = new bookTab((String) value.get(tab_i));
-                    TabLayout.Tab newTab = tabLayout.newTab();
-                    newTab.setText(String.valueOf(i));
-                    tabLayout.addTab(newTab);
-                    bookList.add(bt);
-                    tpa.notifyDataSetChanged();
-                    editor.putInt("tabCount", (int) i);
-                    editor.putString(valueOf(i), tab_i);
-                    editor.putString(tab_i, (String) value.get(tab_i));
-                    editor.apply();
+        SharedPreferences sharedPreferences = getSharedPreferences(name, MODE_PRIVATE);
+        int i = sharedPreferences.getInt("tabCount", 0);
+        if (!String.valueOf(i).isEmpty()) {
+            for(int c = 0;c<=i;c++){
+                sharedPreferences.edit().remove("tab" + valueOf(c)).apply();
+            }
+            sharedPreferences.edit().remove("tabCount").apply();
+            databaseReference = FirebaseDatabase.getInstance().getReference("Books").child(lang).child(genre).child(name).child("Content");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+                    databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            Long count = dataSnapshot.getChildrenCount();
+                            HashMap<String, Object> value = (HashMap<String, Object>) dataSnapshot.getValue();
+                            viewPager.setOffscreenPageLimit(count.intValue());
+                            for (long i = 1; i <= count; i++) {
+                                String tab_i = "tab" + valueOf(i);
+                                bookTab bt = new bookTab((String) value.get(tab_i),"firebase");
+                                TabLayout.Tab newTab = tabLayout.newTab();
+                                newTab.setText(String.valueOf(i));
+                                tabLayout.addTab(newTab);
+                                bookList.add(bt);
+                                tpa.notifyDataSetChanged();
+                                storeToSP(bt);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+
                 }
-            }
+            });
+        }
+    }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
+    private void storeToSP(bookTab bt) {
+        SharedPreferences sharedPreferences = getSharedPreferences(name, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        int i = sharedPreferences.getInt("tabCount", 0);
+        if (String.valueOf(i).isEmpty()) i = 0;
+        i++;
+        editor.putInt("tabCount", i);
+        editor.putString("tab" + valueOf(i), bt.getTab());
+        editor.apply();
     }
 
     @SuppressLint("NewApi")
@@ -190,7 +212,7 @@ public class TabBookOpenActivity extends AppCompatActivity{
     protected void onDestroy() {
         SharedPreferences getBookName = getSharedPreferences(name, MODE_PRIVATE);
         SharedPreferences.Editor lastPage = getBookName.edit();
-        lastPage.putInt("lastPage",tabLayout.getSelectedTabPosition());
+        lastPage.putInt("lastPage",viewPager.getCurrentItem());
         lastPage.apply();
         super.onDestroy();
     }
