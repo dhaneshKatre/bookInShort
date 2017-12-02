@@ -31,25 +31,16 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private String lang,genre,fromLocation;
     private final int VIEW_TYPE_ITEM = 0;
     private final int VIEW_TYPE_LOADING = 1;
-    private int visibleThreshold = 10;
-    private boolean isLoading;
-    private RecyclerView recyclerView;
-    private OnLoadMoreListener onLoadMoreListener;
     private int totalItemCount,lastVisibleItem;
 
-    public BookAdapter(RecyclerView recyclerView, List<BookData> bookModelList, Context context, String lang, String genre, String fromLocation) {
+    public BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre, String fromLocation) {
         this.bookModelList = bookModelList;
         this.context = context;
-        this.recyclerView=recyclerView;
         this.lang=lang ;
         this.genre=genre;
         this.fromLocation=fromLocation;
 
 
-    }
-
-    void setOnLoadMoreListener(OnLoadMoreListener onLoadMoreListener) {
-        this.onLoadMoreListener= onLoadMoreListener;
     }
 
     public int getLastVisibleItem() {
@@ -156,9 +147,9 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @Override
     public int getItemViewType(int position) {
+        // Ithe is loading cha code.
         return bookModelList.get(position) == null ? VIEW_TYPE_LOADING : VIEW_TYPE_ITEM;
     }
-
 
     //"Progress Bar" Viewholder
     private class LoadingViewHolder extends RecyclerView.ViewHolder {
@@ -189,8 +180,6 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             rateCount = (TextView) itemView.findViewById(R.id.rateCount);
         }
     }
-
-
 /*
 
     public class ViewHolder extends RecyclerView.ViewHolder {
