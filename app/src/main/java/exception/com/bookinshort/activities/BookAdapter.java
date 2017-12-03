@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,7 +32,6 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private String lang,genre,fromLocation;
     private final int VIEW_TYPE_ITEM = 0;
     private final int VIEW_TYPE_LOADING = 1;
-    private int totalItemCount,lastVisibleItem;
 
     public BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre, String fromLocation) {
         this.bookModelList = bookModelList;
@@ -43,17 +43,8 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     }
 
-    public int getLastVisibleItem() {
-        return lastVisibleItem;
-    }
-
-    public void setLastVisibleItem(int lastVisibleItem) {
-        this.lastVisibleItem = lastVisibleItem;
-    }
-
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
         /*View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.book_list_item, parent, false);
         return new ViewHolder(view);*/
@@ -70,73 +61,81 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-        if (holder instanceof UserViewHolder ){
-            final BookData bookData = bookModelList.get(position);
-            final UserViewHolder userViewHolder = (UserViewHolder) holder;
-            if(!(bookData.getName() ==null)) {
-                final String name = bookData.getName();
-                userViewHolder.bookIcon.setImageBitmap(bookData.getIcon());
-                userViewHolder.bookName.setText(name);
-                userViewHolder.bookAuthor.setText(bookData.getAuthor());
-                userViewHolder.bookDescription.setText(bookData.getDescription());
-                userViewHolder.rateCount.setText(bookData.getRating());
-                userViewHolder.rateBook.setOnClickListener(new View.OnClickListener() {
-                    @SuppressLint("SetTextI18n")
-                    @Override
-                    public void onClick(View v) {
-                        final AlertDialog.Builder mBuilder = new AlertDialog.Builder(v.getContext());
-                        final AlertDialog dial;
-                        View mView = View.inflate(v.getContext(), R.layout.alert_dial_rate_book, null);
-                        TextView tvName = (TextView) mView.findViewById(R.id.rateBookName);
-                        tvName.setText("Please rate '" + name + "' Thank You!");
-                        final RatingBar ratingBar = (RatingBar) mView.findViewById(R.id.rateBar);
-                        ratingBar.setNumStars(5);
-                        ratingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
-                            @Override
-                            public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
-                                Toast.makeText(context, "Your selected rating: " + rating, Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        SharedPreferences sharedPreferences = context.getSharedPreferences(name, Context.MODE_PRIVATE);
-                        final SharedPreferences.Editor editor = sharedPreferences.edit();
-                        final String bookGenre = sharedPreferences.getString("genre", "");
-                        final String bookLang = sharedPreferences.getString("lang", "");
-                        final Button rateButton = (Button) mView.findViewById(R.id.rateButton);
-                        mBuilder.setView(mView);
-                        dial = mBuilder.create();
-                        dial.show();
-                        rateButton.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                String rating = String.valueOf(ratingBar.getRating());
-                                FirebaseDatabase.getInstance().getReference("Books").child(bookLang).child(bookGenre).child(name).child("rating").setValue(rating);
-                                editor.putString("rating", rating);
-                                editor.apply();
-                                userViewHolder.rateCount.setText(rating);
-                                dial.dismiss();
-                            }
-                        });
-                    }
+        switch (getItemViewType(position)){
+            case VIEW_TYPE_ITEM:
+                final BookData bookData = bookModelList.get(position);
+                final UserViewHolder userViewHolder = (UserViewHolder) holder;
+                if(!(bookData.getName() ==null)) {
+                    final String name = bookData.getName();
+                    userViewHolder.bookIcon.setImageBitmap(bookData.getIcon());
+                    userViewHolder.bookName.setText(name);
+                    userViewHolder.bookAuthor.setText(bookData.getAuthor());
+                    userViewHolder.bookDescription.setText(bookData.getDescription());
+                    userViewHolder.rateCount.setText(bookData.getRating());
+                    userViewHolder.rateBook.setOnClickListener(new View.OnClickListener() {
+                        @SuppressLint("SetTextI18n")
+                        @Override
+                        public void onClick(View v) {
+                            final AlertDialog.Builder mBuilder = new AlertDialog.Builder(v.getContext());
+                            final AlertDialog dial;
+                            View mView = View.inflate(v.getContext(), R.layout.alert_dial_rate_book, null);
+                            TextView tvName = (TextView) mView.findViewById(R.id.rateBookName);
+                            tvName.setText("Please rate '" + name + "' Thank You!");
+                            final RatingBar ratingBar = (RatingBar) mView.findViewById(R.id.rateBar);
+                            ratingBar.setNumStars(5);
+                            ratingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+                                @Override
+                                public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                                    Toast.makeText(context, "Your selected rating: " + rating, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            SharedPreferences sharedPreferences = context.getSharedPreferences(name, Context.MODE_PRIVATE);
+                            final SharedPreferences.Editor editor = sharedPreferences.edit();
+                            final String bookGenre = sharedPreferences.getString("genre", "");
+                            final String bookLang = sharedPreferences.getString("lang", "");
+                            final Button rateButton = (Button) mView.findViewById(R.id.rateButton);
+                            mBuilder.setView(mView);
+                            dial = mBuilder.create();
+                            dial.show();
+                            rateButton.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    String rating = String.valueOf(ratingBar.getRating());
+                                    FirebaseDatabase.getInstance().getReference("Books").child(bookLang).child(bookGenre).child(name).child("rating").setValue(rating);
+                                    editor.putString("rating", rating);
+                                    editor.apply();
+                                    userViewHolder.rateCount.setText(rating);
+                                    dial.dismiss();
+                                }
+                            });
+                        }
 
-                });
-                userViewHolder.relativeLayout.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(context, TabBookOpenActivity.class);
-                        intent.putExtra("lang", lang);
-                        intent.putExtra("genre", genre);
-                        intent.putExtra("fromLocation", fromLocation);
-                        intent.putExtra("name", bookData.getName());
-                        context.startActivity(intent);
-                    }
-                });
-            }
+                    });
+                    userViewHolder.relativeLayout.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(context, TabBookOpenActivity.class);
+                            intent.putExtra("lang", lang);
+                            intent.putExtra("genre", genre);
+                            intent.putExtra("fromLocation", fromLocation);
+                            intent.putExtra("name", bookData.getName());
+                            context.startActivity(intent);
+                        }
+                    });
+                }
+                break;
+            case VIEW_TYPE_LOADING:
+                Log.e("BookInShort","Progress bar");
+                LoadingViewHolder loadingViewHolder = (LoadingViewHolder) holder;
+                loadingViewHolder.progressBar.setIndeterminate(true);
+                break;
+        }
+      /*  if (holder instanceof UserViewHolder ){
+
         }
         else if (holder instanceof LoadingViewHolder){
-            LoadingViewHolder loadingViewHolder = (LoadingViewHolder) holder;
-            loadingViewHolder.progressBar.setIndeterminate(true);
-        }
-        setLastVisibleItem(position);
+
+        }*/
         }
 
 
@@ -148,7 +147,13 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public int getItemViewType(int position) {
         // Ithe is loading cha code.
-        return bookModelList.get(position) == null ? VIEW_TYPE_LOADING : VIEW_TYPE_ITEM;
+       BookData bd = bookModelList.get(position);
+        String a="qaz";
+        if(bd.getName().equalsIgnoreCase(a)){
+            return VIEW_TYPE_LOADING;
+        }
+        else return VIEW_TYPE_ITEM;
+        //return bookModelList.get(position) == null ? VIEW_TYPE_LOADING : VIEW_TYPE_ITEM;
     }
 
     //"Progress Bar" Viewholder

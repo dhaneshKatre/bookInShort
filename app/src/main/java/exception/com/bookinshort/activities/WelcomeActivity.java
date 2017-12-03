@@ -147,7 +147,6 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
         loadHomeData();
 
     }
-
     private void bookSetAdapter(String genre) {
         isLoading=true;
         final DatabaseReference dr = FirebaseDatabase.getInstance().getReference("Books").child(language).child(genre);
@@ -216,6 +215,7 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
                     });
                 }
                 else{
+                    bookModelList.remove(bookModelList.size()-1);
                     BookData bd = bookModelList.get(bookModelList.size()-1);
                     Log.e("BookInShort",bd.getName());
                     dr.orderByKey().startAt(bd.getName()).limitToFirst(4).addValueEventListener(new ValueEventListener() {
@@ -309,12 +309,14 @@ public class WelcomeActivity extends AppCompatActivity implements SearchView.OnQ
             super.onScrolled(recyclerView, dx, dy);
             totalItemCount = linearLayoutManager.getItemCount();
             lastVisibleItem = linearLayoutManager.findLastVisibleItemPosition();
-            if(totalItemCount<totalBooksInFb&&!isLoading&&(lastVisibleItem==totalItemCount-1)){
+            if(!isLoading&&(lastVisibleItem==totalItemCount-1)&&(totalItemCount!=totalBooksInFb)){
+               bookModelList.add(new BookData(null,"qaz",null,null,null));
+                bookAdapter.notifyDataSetChanged();
                 bookSetAdapter(genre);
                 //Log.e("BookInShort","Welcome Activity - pass "+totalItemCount+totalBooksInFb+isLoading+lastVisibleItem );
             }
             else{
-               Log.e("BookInShort","Welcome Activity - fail "+totalItemCount+totalBooksInFb+isLoading+lastVisibleItem );
+              // Log.e("BookInShort","Welcome Activity - fail "+totalItemCount+totalBooksInFb+isLoading+lastVisibleItem );
             }
         }
     });
