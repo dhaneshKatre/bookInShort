@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:theme="@style/toolBarStyle"
             android:background="#27ae60"
-            android:layout_height="?attr/actionBarSize">
+            android:layout_height="wrap_content">
 
         </android.support.v7.widget.Toolbar>
     </android.support.design.widget.AppBarLayout>

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,10 +29,9 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<BookData> bookModelList;
     private Context context;
     private String lang,genre,fromLocation;
-    private final int VIEW_TYPE_ITEM = 0;
-    private final int VIEW_TYPE_LOADING = 1;
+    private int VIEW_TYPE=0;
 
-    public BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre, String fromLocation) {
+    BookAdapter(List<BookData> bookModelList, Context context, String lang, String genre, String fromLocation) {
         this.bookModelList = bookModelList;
         this.context = context;
         this.lang=lang ;
@@ -45,15 +43,17 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        /*View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.book_list_item, parent, false);
-        return new ViewHolder(view);*/
-        if (viewType == VIEW_TYPE_ITEM) {View view = LayoutInflater.from(parent.getContext())
+        if (viewType == 0) {View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.book_list_item, parent, false);
             return new UserViewHolder(view);
-        } else if (viewType == VIEW_TYPE_LOADING) {
+        } else if (viewType == 1) {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_loading_item, parent, false);
             return new LoadingViewHolder(view);
+        }
+        else if (viewType==2){
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.no_book_found, parent, false);
+            return new EmptyViewHolder(view);
+
         }
         return null;
     }
@@ -62,7 +62,7 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         switch (getItemViewType(position)){
-            case VIEW_TYPE_ITEM:
+            case 0:
                 final BookData bookData = bookModelList.get(position);
                 final UserViewHolder userViewHolder = (UserViewHolder) holder;
                 if(!(bookData.getName() ==null)) {
@@ -101,7 +101,9 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                 @Override
                                 public void onClick(View v) {
                                     String rating = String.valueOf(ratingBar.getRating());
-                                    FirebaseDatabase.getInstance().getReference("Books").child(bookLang).child(bookGenre).child(name).child("rating").setValue(rating);
+                                    int currentRating = Integer.parseInt(bookData.getRating());
+                                    String avgRating = String.valueOf((Integer.parseInt(rating)+currentRating)/2);
+                                    FirebaseDatabase.getInstance().getReference("Books").child(bookLang).child(bookGenre).child(name).child("rating").setValue(avgRating);
                                     editor.putString("rating", rating);
                                     editor.apply();
                                     userViewHolder.rateCount.setText(rating);
@@ -124,18 +126,15 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     });
                 }
                 break;
-            case VIEW_TYPE_LOADING:
+            case 1:
                 Log.e("BookInShort","Progress bar");
                 LoadingViewHolder loadingViewHolder = (LoadingViewHolder) holder;
                 loadingViewHolder.progressBar.setIndeterminate(true);
                 break;
+            case 2:
+                Log.e("BookInShort","Empty Holder Text View");
+                break;
         }
-      /*  if (holder instanceof UserViewHolder ){
-
-        }
-        else if (holder instanceof LoadingViewHolder){
-
-        }*/
         }
 
 
@@ -146,14 +145,13 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     @Override
     public int getItemViewType(int position) {
-        // Ithe is loading cha code.
        BookData bd = bookModelList.get(position);
         String a="qaz";
-        if(bd.getName().equalsIgnoreCase(a)){
-            return VIEW_TYPE_LOADING;
+        if (bookModelList.isEmpty()||bookModelList == null) return VIEW_TYPE=2;
+        else if(bd.getName().equalsIgnoreCase(a)){
+            return VIEW_TYPE=1;
         }
-        else return VIEW_TYPE_ITEM;
-        //return bookModelList.get(position) == null ? VIEW_TYPE_LOADING : VIEW_TYPE_ITEM;
+        else return VIEW_TYPE=0;
     }
 
     //"Progress Bar" Viewholder
@@ -166,14 +164,22 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    //"No Book Found" Viewholder
+    private class EmptyViewHolder extends RecyclerView.ViewHolder{
+        private TextView noBookTv;
+        private  EmptyViewHolder(View view){
+            super(view);
+            noBookTv=(TextView)view.findViewById(R.id.noBookFoundTV);
+        }
+    }
+
     // "Normal item" ViewHolder
     private class UserViewHolder extends RecyclerView.ViewHolder {
-        public ImageView bookIcon;
-        public ImageButton rateBook;
-        public TextView bookName, bookAuthor, bookDescription, rateBookName, rateCount;
-        public RelativeLayout relativeLayout;
-
-        public UserViewHolder(View view) {
+        ImageView bookIcon;
+        ImageButton rateBook;
+        TextView bookName, bookAuthor, bookDescription, rateBookName, rateCount;
+        RelativeLayout relativeLayout;
+        UserViewHolder(View view) {
             super(view);
             relativeLayout = (RelativeLayout) itemView.findViewById(R.id.layoutBookRecycle);
             rateBook = (ImageButton) itemView.findViewById(R.id.rateBook);
@@ -185,24 +191,5 @@ public class BookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             rateCount = (TextView) itemView.findViewById(R.id.rateCount);
         }
     }
-/*
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
-        public ImageView bookIcon;
-        public ImageButton rateBook;
-        public TextView bookName, bookAuthor, bookDescription, rateBookName, rateCount;
-        public RelativeLayout relativeLayout;
-
-        public ViewHolder(View itemView) {
-            super(itemView);
-            relativeLayout = (RelativeLayout) itemView.findViewById(R.id.layoutBookRecycle);
-            rateBook = (ImageButton) itemView.findViewById(R.id.rateBook);
-            bookIcon = (ImageView) itemView.findViewById(R.id.bookIcon);
-            bookName = (TextView) itemView.findViewById(R.id.bookName);
-            bookAuthor = (TextView) itemView.findViewById(R.id.bookAuthor);
-            bookDescription = (TextView) itemView.findViewById(R.id.bookDescription);
-            rateBookName = (TextView) itemView.findViewById(R.id.rateBookName);
-            rateCount = (TextView) itemView.findViewById(R.id.rateCount);
-        }
-    }*/
 }
