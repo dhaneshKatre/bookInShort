@@ -33,6 +33,7 @@
     <string name="ratecd">Rate Button</string>
     <string name="descr">Description</string>
     <string name="logOut">Logout</string>
+    <string name="login">Login</string>
 
     <string-array name="nav_item_activity_titles">
         <item>Home</item>

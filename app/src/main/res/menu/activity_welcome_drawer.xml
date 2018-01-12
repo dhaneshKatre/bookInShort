@@ -20,14 +20,14 @@
                     android:icon="@drawable/paper"
                     android:id="@+id/genre_poem"
                     android:title="@string/poem"/>
-                <item
-                    android:icon="@drawable/tab_selector"
-                    android:id="@+id/loginMenu"
-                    android:title="Login"/>
             </group>
 
     <item android:title="@string/other">
         <menu>
+            <item
+                android:icon="@drawable/tab_selector"
+                android:id="@+id/loginMenu"
+                android:title="@string/login"/>
             <item
                 android:icon="@drawable/about"
                 android:id="@+id/nav_about_us"

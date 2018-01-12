@@ -7,7 +7,13 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -32,6 +38,7 @@ public class TabBookOpenActivity extends AppCompatActivity{
     private Toolbar toolbar;
     private List<bookTab> bookList;
     private static TabLayout tabLayout;
+    Boolean tabLayVisivility =true;
     @SuppressLint("NewApi")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +63,46 @@ public class TabBookOpenActivity extends AppCompatActivity{
         initSharedPref();
         onScroll();
         onTabSelect();
+        onTap();
+    }
 
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void onTap() {
+        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.bookOpenLayout);
+        linearLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.e("BookInShort","TabOpenActivity viewPager click");
+                if(tabLayVisivility) {
+                    Log.e("BookInShort","TabOpenActivity viewPager click -> tab is invisible now");
+                    tabLayout.setVisibility(View.INVISIBLE);
+                    tabLayVisivility = false;
+                }
+                else {
+                    Log.e("BookInShort","TabOpenActivity viewPager click -> tab is visible now");
+                    tabLayout.setVisibility(View.VISIBLE);
+                    tabLayVisivility=true;
+                }
+            }
+        });
+       /* viewPager.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Log.e("BookInShort","TabOpenActivity viewPager click");
+            if(tabLayVisivility) {
+                Log.e("BookInShort","TabOpenActivity viewPager click -> tab is invisible now");
+                tabLayout.setVisibility(View.INVISIBLE);
+                tabLayVisivility = false;
+            }
+            else {
+                Log.e("BookInShort","TabOpenActivity viewPager click -> tab is visible now");
+                tabLayout.setVisibility(View.VISIBLE);
+                tabLayVisivility=true;
+            }
+        }
+    });
+    */
     }
 
     private void loadFromLocal() {
@@ -154,8 +200,7 @@ public class TabBookOpenActivity extends AppCompatActivity{
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
             tabLayout.setVisibility(View.VISIBLE);
             tabLayout.setScrollPosition(position,0f,true);
-            //TabLayout.Tab tab = tabLayout.getTabAt(position);
-            //tab.select();
+
         }
 
         @Override
